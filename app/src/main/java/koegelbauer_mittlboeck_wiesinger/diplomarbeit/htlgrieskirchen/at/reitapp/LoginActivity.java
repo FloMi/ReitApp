@@ -3,6 +3,7 @@ package koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -28,6 +29,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +51,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * TODO: remove after connecting to a real authentication system.
      */
     private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
+            "foo@example.com:hello", "bar@example.com:world", "a@b.c:123"
     };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -90,8 +92,21 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
+        Button openMap = (Button) findViewById(R.id.mapButton);
+        openMap.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickOpenMap();
+            }
+        });
+
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+    private void onClickOpenMap()
+    {
+        Intent map = new Intent(this, MapActivity.class);
+        startActivity(map);
     }
 
     private void populateAutoComplete() {
@@ -197,7 +212,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 4;
+        return password.length() > 2;
     }
 
     /**
@@ -324,7 +339,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
 
             // TODO: register the new account here.
-            return true;
+            return false;
         }
 
         @Override
@@ -333,7 +348,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                finish();
+                Toast.makeText(LoginActivity.this, "Erfolgreich eingeloggt", Toast.LENGTH_SHORT).show();
+                onClickOpenMap();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
