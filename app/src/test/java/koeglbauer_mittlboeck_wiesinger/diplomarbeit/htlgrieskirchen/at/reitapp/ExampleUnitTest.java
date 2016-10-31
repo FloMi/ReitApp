@@ -1,4 +1,4 @@
-package koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
+package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import org.junit.Test;
 

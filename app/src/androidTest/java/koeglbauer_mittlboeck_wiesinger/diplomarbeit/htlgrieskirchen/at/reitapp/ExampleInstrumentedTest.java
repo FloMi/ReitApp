@@ -1,4 +1,4 @@
-package koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
+package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

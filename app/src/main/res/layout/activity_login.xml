@@ -8,7 +8,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LoginActivity">
+    tools:context="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LoginActivity">
 
     <!-- Login progress -->
     <ProgressBar
