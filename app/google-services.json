@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1007859836785",
+    "firebase_url": "https://reitapp-4fcba.firebaseio.com",
+    "project_id": "reitapp-4fcba",
+    "storage_bucket": "reitapp-4fcba.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007859836785:android:93180e54a78505dd",
+        "android_client_info": {
+          "package_name": "koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1007859836785-asfdiiblrsc9e8aqain25s21n86vt0co.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp",
+            "certificate_hash": "ECFEB54A71E75A60A3EB8F3C62993152F7C3F83F"
+          }
+        },
+        {
+          "client_id": "1007859836785-rhsnlqf0j5o2u69tr4iib3k3uocitcvf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApbrXYVA3qUDNr29sUsrSPv9O8rHPQ3i8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1007859836785-rhsnlqf0j5o2u69tr4iib3k3uocitcvf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
