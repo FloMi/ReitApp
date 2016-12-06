@@ -20,24 +20,21 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile fileTree(dir: 'libs', include: ['*.jar'])
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+    compile 'com.graphhopper:directions-api-java-client:0.8.2.1'
     compile 'org.osmdroid:osmdroid-android:5.5:release@aar'
+    compile 'com.github.MKergall:osmbonuspack:6.0'
+    compile 'com.google.android.gms:play-services-appindexing:9.0.0'
+
+    compile 'com.google.firebase:firebase-core:9.8.0'
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.google.firebase:firebase-core:9.8.0'
     testCompile 'junit:junit:4.12'
-    compile 'com.graphhopper:directions-api-java-client:0.8.2.1'
-    compile 'org.mapsforge:mapsforge-core:0.6.1'
-    compile 'org.mapsforge:mapsforge-map:0.6.1'
-    compile 'org.mapsforge:mapsforge-map-android:0.6.1'
-    compile 'org.mapsforge:mapsforge-map-reader:0.6.1'
-
-    compile 'com.github.MKergall:osmbonuspack:6.0'
-
 }
 
 apply plugin: 'com.google.gms.google-services'
