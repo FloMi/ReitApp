@@ -88,12 +88,12 @@ public class MapActivity extends Activity {
     private void SetGraphhopper() {
 
 
-        new AsyncTask<Void, Void, PathWrapper>() {
+        new AsyncTask<Void, Void, Polyline>() {
             float time;
 
-            protected PathWrapper doInBackground(Void... v) {
+            protected Polyline doInBackground(Void... v) {
                 StopWatch sw = new StopWatch().start();
-                GHRequest req = new GHRequest(48.090075, 13.566833, 48.084804, 13.568171).
+                GHRequest req = new GHRequest(48.089958, 13.562623,48.085952, 13.572257).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
                 req.getHints().
                         put(Parameters.Routing.INSTRUCTIONS, "false");
@@ -104,20 +104,23 @@ public class MapActivity extends Activity {
                         readTimeout(5, TimeUnit.SECONDS).build());
                 GHResponse resp = gh.route(req);
                 time = sw.stop().getSeconds();
-                return resp.getBest();
+                resp.getHints();
+
+
+                Road road = roadManager.getRoad(createPolyline(resp.getBest()));
+                Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
+
+                return roadOverlay;
             }
 
-            protected void onPostExecute(PathWrapper resp) {
-                if (!resp.hasErrors()) {
+            protected void onPostExecute(Polyline resp) {
 
 
-                    Road road = roadManager.getRoad(createPolyline(resp));
-                    Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
-                    map.getOverlays().add(roadOverlay
-                    );
+
+
+                    map.getOverlays().add(resp);
                     map.invalidate();
-                } else {
-                }
+
             }
         }.execute();
 
