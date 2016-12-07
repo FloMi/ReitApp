@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 
-public class MapActivity extends Activity {
+public class 25MapActivity extends Activity {
     MapView map;
     private MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
