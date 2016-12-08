@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 
-public class 25MapActivity extends Activity {
+public class MapActivity extends Activity {
     MapView map;
     private MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
@@ -93,10 +93,29 @@ public class 25MapActivity extends Activity {
 
             protected Polyline doInBackground(Void... v) {
                 StopWatch sw = new StopWatch().start();
-                GHRequest req = new GHRequest(48.089958, 13.562623,48.085952, 13.572257).
+
+                List<GHPoint> points;
+                points = new ArrayList<GHPoint>(6);
+
+                GHPoint b = new GHPoint(48.091097, 13.567568);
+                GHPoint c = new GHPoint(48.090287, 13.571452);
+                GHPoint e = new GHPoint(48.089642, 13.576130);
+                GHPoint f = new GHPoint(48.090953, 13.577171);
+                GHPoint g = new GHPoint(48.091025, 13.577783);
+                GHPoint h = new GHPoint(48.090788, 13.578212);
+
+
+                points.add(b);
+                points.add(c);
+                points.add(e);
+                points.add(f);
+                points.add(g);
+                points.add(h);
+
+                GHRequest req = new GHRequest(points).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
                 req.getHints().
-                        put(Parameters.Routing.INSTRUCTIONS, "false");
+                        put(Parameters.Routing.INSTRUCTIONS, "true");
                 GraphHopperWeb gh = new GraphHopperWeb();
                 gh.setKey("32565c22-5144-4700-b089-a78f30b6044a");
                 gh.setDownloader(new OkHttpClient.Builder().
@@ -104,8 +123,8 @@ public class 25MapActivity extends Activity {
                         readTimeout(5, TimeUnit.SECONDS).build());
                 GHResponse resp = gh.route(req);
                 time = sw.stop().getSeconds();
-                resp.getHints();
 
+                InstructionList list = resp.getBest().getInstructions();
 
                 Road road = roadManager.getRoad(createPolyline(resp.getBest()));
                 Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
@@ -114,9 +133,6 @@ public class 25MapActivity extends Activity {
             }
 
             protected void onPostExecute(Polyline resp) {
-
-
-
 
                     map.getOverlays().add(resp);
                     map.invalidate();
