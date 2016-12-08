@@ -95,10 +95,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    loginSuceed = true;
+                    //loginSuceed = true;
                 } else {
                     // User is signed out
-                    loginSuceed = false;
+                    //loginSuceed = false;
                 }
             }
         };
@@ -377,6 +377,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
             */
 
+
             mAuth.signInWithEmailAndPassword(mEmail, mPassword)
                     .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
                         @Override
@@ -391,6 +392,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     });
 
             // TODO: register the new account here.
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                return false;
+            }
             return loginSuceed;
         }
 

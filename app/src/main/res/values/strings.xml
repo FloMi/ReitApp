@@ -9,7 +9,7 @@
     <string name="action_sign_in_short">Einloggen</string>
     <string name="error_invalid_email">Falsche Email</string>
     <string name="error_invalid_password">Passwort zu kurz</string>
-    <string name="error_incorrect_password">Falsches Passwort</string>
+    <string name="error_incorrect_password">Falsches Passwort oder Email</string>
     <string name="error_field_required">Benötigtes Feld</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
