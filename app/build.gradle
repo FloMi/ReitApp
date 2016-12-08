@@ -28,7 +28,7 @@ dependencies {
     compile 'com.graphhopper:directions-api-java-client:0.8.2.1'
     compile 'org.osmdroid:osmdroid-android:5.5:release@aar'
     compile 'com.github.MKergall:osmbonuspack:6.0'
-    compile 'com.google.android.gms:play-services-appindexing:9.0.0'
+    compile 'com.google.firebase:firebase-appindexing:10.0.1'
 
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
