@@ -23,6 +23,10 @@
         <activity android:name="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.MapActivity">
 
         </activity>
+        <activity android:name=".RegisterActivity"
+            android:label="@string/activity_register">
+
+        </activity>
         <activity
             android:name="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LoginActivity"
             android:label="@string/title_activity_login">

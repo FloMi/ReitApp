@@ -5,13 +5,18 @@
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Passwort</string>
+    <string name="prompt_passwordConfirmation">Passwort bestätigen</string>
     <string name="action_sign_in">Einloggen</string>
+    <string name="action_sign_up">Benutzer erstellen</string>
     <string name="action_sign_in_short">Einloggen</string>
+    <string name="action_sign_up_short">Benutzer erstellen</string>
     <string name="error_invalid_email">Falsche Email</string>
     <string name="error_invalid_password">Passwort zu kurz</string>
     <string name="error_incorrect_password">Falsches Passwort oder Email</string>
+    <string name="error_incorrect_password_confirmed">Passwort stimmt nicht überein</string>
     <string name="error_field_required">Benötigtes Feld</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="activity_register">Neuen Benutzer anlegen</string>
 </resources>
