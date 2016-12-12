@@ -82,6 +82,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
+                    user.sendEmailVerification();
                     // User is signed in
                     //loginSuceed = true;
                 } else {
