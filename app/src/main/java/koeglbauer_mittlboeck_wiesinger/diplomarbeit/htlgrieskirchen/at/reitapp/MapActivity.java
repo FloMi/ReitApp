@@ -2,6 +2,7 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -10,8 +11,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.appindexing.Action;
@@ -65,6 +68,13 @@ public class MapActivity extends Activity {
             checkPermissions();
         }
 
+        FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
+        myFab.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                openUserActivity();
+            }
+        });
+
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
         roadManager = new OSRMRoadManager(this);
         map = (MapView) findViewById(R.id.map);
@@ -83,6 +93,11 @@ public class MapActivity extends Activity {
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+    }
+
+    private void openUserActivity() {
+        Intent intent = new Intent(this, UserActivity.class);
+        startActivity(intent);
     }
 
     private void SetGraphhopper() {
@@ -225,4 +240,5 @@ public class MapActivity extends Activity {
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
+
 }

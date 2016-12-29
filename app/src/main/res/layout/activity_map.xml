@@ -13,7 +13,7 @@
         android:id="@+id/start"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:src="@drawable/ic_action_name"
+        android:src="@drawable/ic_start"
         android:layout_width="30pt"
         android:layout_height="30pt"
         android:layout_marginRight="5pt"
