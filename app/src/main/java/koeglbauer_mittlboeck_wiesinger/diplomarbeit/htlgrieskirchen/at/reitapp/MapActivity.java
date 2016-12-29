@@ -101,16 +101,15 @@ public class MapActivity extends Activity {
                 GHPoint c = new GHPoint(48.090287, 13.571452);
                 GHPoint e = new GHPoint(48.089642, 13.576130);
                 GHPoint f = new GHPoint(48.090953, 13.577171);
-                GHPoint g = new GHPoint(48.091025, 13.577783);
-                GHPoint h = new GHPoint(48.090788, 13.578212);
+
 
 
                 points.add(b);
                 points.add(c);
                 points.add(e);
                 points.add(f);
-                points.add(g);
-                points.add(h);
+
+
 
                 GHRequest req = new GHRequest(points).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
