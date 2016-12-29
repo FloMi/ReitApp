@@ -82,7 +82,6 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    user.sendEmailVerification();
                     // User is signed in
                     //loginSuceed = true;
                 } else {
@@ -360,11 +359,17 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                             Log.w("signUp", "createUserWithEmail:onComplete:" + task.isSuccessful());
 
                             registerSucceed = task.isSuccessful();
+                            if(task.isSuccessful())
+                                mAuth.getCurrentUser().sendEmailVerification();
                         }
                     });
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
+                if(!registerSucceed)
+                    Thread.sleep(1000);
+                if(!registerSucceed)
+                    Thread.sleep(1000);
             } catch (InterruptedException e) {
                 return false;
             }
