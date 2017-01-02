@@ -28,6 +28,7 @@ import com.graphhopper.api.GraphHopperWeb;
 import com.graphhopper.util.InstructionList;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.StopWatch;
+import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
 import org.osmdroid.bonuspack.routing.OSRMRoadManager;
@@ -38,10 +39,13 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -52,6 +56,7 @@ public class MapActivity extends Activity {
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
     RoadManager roadManager;
     private GoogleApiClient client;
+    InstructionList instructionList;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,18 +111,22 @@ public class MapActivity extends Activity {
                 List<GHPoint> points;
                 points = new ArrayList<GHPoint>(6);
 
-                GHPoint b = new GHPoint(48.091097, 13.567568);
-                GHPoint c = new GHPoint(48.090287, 13.571452);
-                GHPoint e = new GHPoint(48.089642, 13.576130);
-                GHPoint f = new GHPoint(48.090953, 13.577171);
+                GHPoint b = new GHPoint(48.083510, 13.568422);
 
+                GHPoint e = new GHPoint(48.083044, 13.571609);
+
+                GHPoint f = new GHPoint(48.081662, 13.572123);
+
+                GHPoint g = new GHPoint(48.080710, 13.569995);
+
+                GHPoint h = new GHPoint(48.083510, 13.568422);
 
 
                 points.add(b);
-                points.add(c);
                 points.add(e);
                 points.add(f);
-
+                points.add(g);
+                points.add(h);
 
 
                 GHRequest req = new GHRequest(points).
@@ -132,12 +141,16 @@ public class MapActivity extends Activity {
                 GHResponse resp = gh.route(req);
                 time = sw.stop().getSeconds();
 
-                InstructionList list = resp.getBest().getInstructions();
+                instructionList = resp.getBest().getInstructions();
 
-                Road road = roadManager.getRoad(createPolyline(resp.getBest()));
-                Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
+                Polyline line = new Polyline();
+                line.setPoints(createPolyline(resp.getBest()));
+                // road = roadManager.getRoad(createPolyline(resp.getBest()));
+                //Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
 
-                return roadOverlay;
+
+
+                return line;
             }
 
             protected void onPostExecute(Polyline resp) {
@@ -154,30 +167,61 @@ public class MapActivity extends Activity {
 
     private  ArrayList<GeoPoint> createPolyline(PathWrapper response) {
 
-        Polyline line = new Polyline(this);
-
-        line.setTitle("Test");
-        line.setSubDescription(Polyline.class.getCanonicalName());
-        line.setWidth(20f);
-
-        //List<GeoPoint> geoPoints = new ArrayList<>();
 
 
         ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
 
-
         PointList tmp = response.getPoints();
 
-        for (int i = 0; i < response.getPoints().getSize(); i++) {
+        for (int i = 0; i < tmp.getSize(); i++) {
 
             GeoPoint g = new GeoPoint(tmp.getLatitude(i), tmp.getLongitude(i));
             mMapController.setCenter(g);
             waypoints.add(g);
 
-            //geoPoints.add(g);
         }
-
+        crateInstructions();
         return waypoints;
+    }
+
+    private void crateInstructions()
+    {
+        for(int i=0; i<instructionList.size(); i++){
+
+
+            Marker m = new Marker(map);
+
+            GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0),instructionList.get(i).getPoints().getLongitude(0));
+
+            m.setPosition(g);
+
+            Translation translation = new Translation() {
+                @Override
+                public String tr(String key, Object... params) {
+                    return null;
+                }
+
+                @Override
+                public Map<String, String> asMap() {
+                    return null;
+                }
+
+                @Override
+                public Locale getLocale() {
+                    return null;
+                }
+
+                @Override
+                public String getLanguage() {
+                    return null;
+                }
+            };
+
+            m.setTitle(instructionList.get(i).getTurnDescription(translation));
+            m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+            map.getOverlays().add(m);
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
