@@ -3,11 +3,11 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-public class UserActivity extends AppCompatActivity {
+public class MainMenuActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user);
+        setContentView(R.layout.activity_mainmenu);
     }
 }

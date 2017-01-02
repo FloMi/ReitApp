@@ -19,5 +19,5 @@
         completions."
     </string>
     <string name="activity_register">Neuen Benutzer anlegen</string>
-    <string name="activity_user_label">Benutzer</string>
+    <string name="activity_user_label">Hauptmenü</string>
 </resources>

@@ -4,8 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -13,7 +11,6 @@ import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -30,7 +27,6 @@ import com.graphhopper.PathWrapper;
 import com.graphhopper.api.GraphHopperWeb;
 import com.graphhopper.util.InstructionList;
 import com.graphhopper.util.Parameters;
-import com.graphhopper.util.PointList;
 import com.graphhopper.util.StopWatch;
 import com.graphhopper.util.shapes.GHPoint;
 
@@ -42,12 +38,10 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -96,7 +90,7 @@ public class MapActivity extends Activity {
     }
 
     private void openUserActivity() {
-        Intent intent = new Intent(this, UserActivity.class);
+        Intent intent = new Intent(this, MainMenuActivity.class);
         startActivity(intent);
     }
 
@@ -240,5 +234,8 @@ public class MapActivity extends Activity {
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
-
+    @Override
+    public void onBackPressed() {
+        // do nothing, because back should do nothing
+    }
 }
