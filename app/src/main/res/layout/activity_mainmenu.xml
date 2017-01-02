@@ -10,4 +10,65 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.MainMenuActivity">
 
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:text="Statistiken"
+                android:id="@+id/buttonStatistics"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_menu_white_48dp"
+                android:gravity="top|center"/>
+
+            <Button
+                android:text="Optionen"
+                android:id="@+id/buttonOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:text="Datenschutz"
+                android:id="@+id/buttonData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp" />
+
+            <Button
+                android:text="Logout"
+                android:id="@+id/buttonLogout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
 </RelativeLayout>
