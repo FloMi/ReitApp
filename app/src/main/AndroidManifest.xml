@@ -32,6 +32,7 @@
             android:label="@string/title_activity_login">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -42,6 +43,13 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        <activity android:name=".StatisticActivity"
+            android:label="@string/activity_statistics_label"/>
+        <activity android:name=".SettingsActivity"
+            android:label="@string/activity_settings_label"/>
+        <activity android:name=".SecurityActivity"
+            android:label="@string/activity_security_label"></activity>
     </application>
 
 </manifest>

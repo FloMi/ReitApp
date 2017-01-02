@@ -20,4 +20,8 @@
     </string>
     <string name="activity_register">Neuen Benutzer anlegen</string>
     <string name="activity_user_label">Hauptmenü</string>
+    <string name="activity_security_label">Datenschutz</string>
+    <string name="activity_settings_label">Einstellungen</string>
+    <string name="activity_statistics_label">Statistiken</string>
+    <string name="action_logout">Ausloggen</string>
 </resources>

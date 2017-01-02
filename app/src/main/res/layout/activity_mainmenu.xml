@@ -21,26 +21,32 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:text="Statistiken"
+                android:text="@string/activity_statistics_label"
                 android:id="@+id/buttonStatistics"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
-                android:drawableTop="@mipmap/ic_menu_white_48dp"
-                android:gravity="top|center"/>
+                android:drawableTop="@mipmap/ic_assignment_white_48dp"
+                android:onClick="onClickStatistic"/>
 
             <Button
-                android:text="Optionen"
+                android:text="@string/activity_settings_label"
                 android:id="@+id/buttonOptions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
                 android:background="@color/colorPrimary"
-                android:layout_margin="5dp" />
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_settings_white_48dp"
+                android:onClick="onClickSettings"/>
         </LinearLayout>
 
         <LinearLayout
@@ -49,24 +55,32 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:text="Datenschutz"
-                android:id="@+id/buttonData"
+                android:text="@string/activity_security_label"
+                android:id="@+id/buttonSecurity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
                 android:background="@color/colorPrimary"
-                android:layout_margin="5dp" />
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_security_white_48dp"
+                android:onClick="onClickSecurity"/>
 
             <Button
-                android:text="Logout"
+                android:text="@string/action_logout"
                 android:id="@+id/buttonLogout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
                 android:background="@color/colorPrimary"
-                android:layout_margin="5dp" />
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_exit_to_app_white_48dp"
+                android:onClick="onClickLogout"/>
         </LinearLayout>
 
     </LinearLayout>
