@@ -2,17 +2,25 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
@@ -31,6 +39,7 @@ import com.graphhopper.util.StopWatch;
 import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
+
 import org.osmdroid.bonuspack.routing.OSRMRoadManager;
 import org.osmdroid.bonuspack.routing.Road;
 import org.osmdroid.bonuspack.routing.RoadManager;
@@ -40,7 +49,12 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,15 +65,22 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 
 public class MapActivity extends Activity {
-    MapView map;
+
+    private static MapView map;
     private MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
-    RoadManager roadManager;
     private GoogleApiClient client;
-    InstructionList instructionList;
+    private InstructionList instructionList;
+    ArrayList<OverlayItem> overlayItemArray;
+    LocationService mLocationService;
+    //MyLocationOverlay myLocationOverlay = null;
+    LocationManager locationManager;
+    GeoPoint currentLocation;
+    static Marker currentLocationMarker;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
@@ -75,24 +96,30 @@ public class MapActivity extends Activity {
         });
 
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
-        roadManager = new OSRMRoadManager(this);
-        map = (MapView) findViewById(R.id.map);
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setBuiltInZoomControls(true);
-        map.setMultiTouchControls(true);
 
-        mMapController = (MapController) map.getController();
-        mMapController.setZoom(17);
-        GeoPoint s = new GeoPoint(48.090075, 13.566833);
-        mMapController.setCenter(s);
-
+        SetMap();
         SetGraphhopper();
 
+        Intent intent = new Intent(this, LocationService.class);
+        startService(intent);
 
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
+
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
+        currentLocationMarker = new Marker(map);
+        currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.point));
     }
+
+    public static void displayMyCurrentLocationOverlay(GeoPoint currentLocation)
+    {
+        map.getOverlays().remove(currentLocationMarker);
+        currentLocationMarker.setPosition(currentLocation);
+        currentLocationMarker.setTitle("You");
+        currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+        map.getOverlays().add(currentLocationMarker);
+    }
+
 
     private void openUserActivity() {
         Intent intent = new Intent(this, MainMenuActivity.class);
@@ -100,7 +127,6 @@ public class MapActivity extends Activity {
     }
 
     private void SetGraphhopper() {
-
 
         new AsyncTask<Void, Void, Polyline>() {
             float time;
@@ -111,23 +137,17 @@ public class MapActivity extends Activity {
                 List<GHPoint> points;
                 points = new ArrayList<GHPoint>(6);
 
-                GHPoint b = new GHPoint(48.083510, 13.568422);
-
-                GHPoint e = new GHPoint(48.083044, 13.571609);
-
-                GHPoint f = new GHPoint(48.081662, 13.572123);
-
-                GHPoint g = new GHPoint(48.080710, 13.569995);
-
-                GHPoint h = new GHPoint(48.083510, 13.568422);
-
+                GHPoint b = new GHPoint(48.468844, 13.733946);
+                GHPoint e = new GHPoint(48.472273, 13.742282);
+                GHPoint f = new GHPoint(48.476412, 13.742110);
+                GHPoint g = new GHPoint(48.478475, 13.738012);
+                GHPoint h = new GHPoint(48.468844, 13.733946);
 
                 points.add(b);
                 points.add(e);
                 points.add(f);
                 points.add(g);
                 points.add(h);
-
 
                 GHRequest req = new GHRequest(points).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
@@ -144,30 +164,36 @@ public class MapActivity extends Activity {
                 instructionList = resp.getBest().getInstructions();
 
                 Polyline line = new Polyline();
+                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setWidth(20);
                 line.setPoints(createPolyline(resp.getBest()));
-                // road = roadManager.getRoad(createPolyline(resp.getBest()));
-                //Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
-
-
 
                 return line;
             }
 
             protected void onPostExecute(Polyline resp) {
 
-                    map.getOverlays().add(resp);
-                    map.invalidate();
+                map.getOverlays().add(resp);
+                map.invalidate();
 
             }
         }.execute();
-
-
     }
 
+    private void SetMap() {
+
+        map = (MapView) findViewById(R.id.map);
+        map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setBuiltInZoomControls(true);
+        map.setMultiTouchControls(true);
+
+        mMapController = (MapController) map.getController();
+        mMapController.setZoom(17);
+        GeoPoint s = new GeoPoint(48.473191, 13.738506);
+        mMapController.setCenter(s);
+    }
 
     private  ArrayList<GeoPoint> createPolyline(PathWrapper response) {
-
-
 
         ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
 
@@ -189,7 +215,7 @@ public class MapActivity extends Activity {
 
 
             Marker m = new Marker(map);
-
+            m.setIcon(getResources().getDrawable(R.drawable.marker));
             GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0),instructionList.get(i).getPoints().getLongitude(0));
 
             m.setPosition(g);
@@ -281,4 +307,5 @@ public class MapActivity extends Activity {
     public void onBackPressed() {
         // do nothing, because back should do nothing
     }
+
 }
