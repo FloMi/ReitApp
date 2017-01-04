@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -28,6 +29,7 @@ public class MainMenuActivity extends AppCompatActivity {
     }
     public void onClickLogout(View view){
         FirebaseAuth.getInstance().signOut();
+        Toast.makeText(this, R.string.loggedout_toast, Toast.LENGTH_LONG).show();
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
         finish();

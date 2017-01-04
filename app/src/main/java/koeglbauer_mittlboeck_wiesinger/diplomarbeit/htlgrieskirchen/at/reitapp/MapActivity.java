@@ -178,7 +178,6 @@ public class MapActivity extends Activity {
             GeoPoint g = new GeoPoint(tmp.getLatitude(i), tmp.getLongitude(i));
             mMapController.setCenter(g);
             waypoints.add(g);
-
         }
         crateInstructions();
         return waypoints;
