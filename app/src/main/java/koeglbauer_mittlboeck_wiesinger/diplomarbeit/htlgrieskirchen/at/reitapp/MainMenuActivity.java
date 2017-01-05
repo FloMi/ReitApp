@@ -34,4 +34,8 @@ public class MainMenuActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+    public void onClickTour(View view){
+        Intent intent = new Intent(this, TourActivity.class);
+        startActivity(intent);
+    }
 }
