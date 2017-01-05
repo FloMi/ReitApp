@@ -18,4 +18,16 @@
         android:layout_height="30pt"
         android:layout_marginRight="5pt"
         android:layout_marginBottom="5pt"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="80pt"
+        android:layout_alignParentBottom="true">
+
+        <Button
+            android:id="@+id/startrout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
 </RelativeLayout>

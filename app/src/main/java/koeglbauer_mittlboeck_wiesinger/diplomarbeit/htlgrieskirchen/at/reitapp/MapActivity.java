@@ -2,7 +2,9 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -19,6 +21,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 
@@ -75,7 +78,11 @@ public class MapActivity extends Activity {
     LocationService mLocationService;
     //MyLocationOverlay myLocationOverlay = null;
     LocationManager locationManager;
-    GeoPoint currentLocation;
+    static GeoPoint currentLocation;
+    private GeoPoint startingPoint;
+    Polyline response;
+    List<Marker> InstructionMarkerList = new ArrayList<Marker>();
+
     static Marker currentLocationMarker;
 
     @Override
@@ -92,13 +99,22 @@ public class MapActivity extends Activity {
         myFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 openUserActivity();
+                stopService(new Intent(MapActivity.this,LocationService.class));
+
+            }
+        });
+
+        Button startNav = (Button) findViewById(R.id.startrout);
+        startNav.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                startNavigation();
             }
         });
 
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
         SetMap();
-        SetGraphhopper();
+
 
         Intent intent = new Intent(this, LocationService.class);
         startService(intent);
@@ -110,8 +126,35 @@ public class MapActivity extends Activity {
         currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.point));
     }
 
-    public static void displayMyCurrentLocationOverlay(GeoPoint currentLocation)
+    private void startNavigation() {
+
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+
+        builder.setTitle("Start Punkt");
+
+        builder.setMessage("Von wo navigieren?");
+        builder.setPositiveButton("Aktueller Standpunkt ", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                SetGraphhopperActualPosition();
+
+
+            }
+        });
+        builder.setNegativeButton("Startpunkt des Wegs ", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                SetGraphhopperOnStart();
+
+
+            }
+        });
+        builder.show();
+    }
+
+    public static void displayMyCurrentLocationOverlay(GeoPoint Location)
     {
+        currentLocation = Location;
         map.getOverlays().remove(currentLocationMarker);
         currentLocationMarker.setPosition(currentLocation);
         currentLocationMarker.setTitle("You");
@@ -126,7 +169,65 @@ public class MapActivity extends Activity {
         startActivity(intent);
     }
 
-    private void SetGraphhopper() {
+    private void SetGraphhopperOnStart() {
+
+        new AsyncTask <Void, Void, Polyline>() {
+            float time;
+
+            protected Polyline doInBackground(Void... v) {
+                StopWatch sw = new StopWatch().start();
+
+                List<GHPoint> points;
+                points = new ArrayList<GHPoint>(6);
+
+                GHPoint b = new GHPoint(48.468844, 13.733946);
+                GeoPoint s = new GeoPoint(b.getLat(),b.getLon());
+                startingPoint = s;
+                GHPoint e = new GHPoint(48.472273, 13.742282);
+                GHPoint f = new GHPoint(48.476809, 13.738836);
+                GHPoint h = new GHPoint(48.468844, 13.733946);
+
+                points.add(b);
+                points.add(e);
+                points.add(f);
+                points.add(h);
+
+                GHRequest req = new GHRequest(points).
+                        setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
+                req.getHints().
+                        put(Parameters.Routing.INSTRUCTIONS, "true");
+                GraphHopperWeb gh = new GraphHopperWeb();
+                gh.setKey("32565c22-5144-4700-b089-a78f30b6044a");
+                gh.setDownloader(new OkHttpClient.Builder().
+                        connectTimeout(5, TimeUnit.SECONDS).
+                        readTimeout(5, TimeUnit.SECONDS).build());
+                GHResponse resp = gh.route(req);
+                time = sw.stop().getSeconds();
+
+                instructionList = resp.getBest().getInstructions();
+                crateInstructions();
+                Polyline line = new Polyline();
+                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setWidth(20);
+                line.setPoints(createPolyline(resp.getBest()));
+
+                return line;
+            }
+
+            protected void onPostExecute(Polyline resp) {
+
+                if(response != null) map.getOverlays().remove(response);
+                response = resp;
+                map.getOverlays().add(response);
+                crateInstructions();
+
+                map.invalidate();
+
+            }
+        }.execute();
+    }
+
+    private void SetGraphhopperActualPosition() {
 
         new AsyncTask<Void, Void, Polyline>() {
             float time;
@@ -138,6 +239,8 @@ public class MapActivity extends Activity {
                 points = new ArrayList<GHPoint>(6);
 
                 GHPoint b = new GHPoint(48.468844, 13.733946);
+                GeoPoint s = new GeoPoint(b.getLat(),b.getLon());
+                startingPoint = s;
                 GHPoint e = new GHPoint(48.472273, 13.742282);
                 GHPoint f = new GHPoint(48.476412, 13.742110);
                 GHPoint g = new GHPoint(48.478475, 13.738012);
@@ -164,7 +267,7 @@ public class MapActivity extends Activity {
                 instructionList = resp.getBest().getInstructions();
 
                 Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setColor(Color.argb(255, 255,000,000));
                 line.setWidth(20);
                 line.setPoints(createPolyline(resp.getBest()));
 
@@ -173,7 +276,11 @@ public class MapActivity extends Activity {
 
             protected void onPostExecute(Polyline resp) {
 
-                map.getOverlays().add(resp);
+                if(response != null) map.getOverlays().remove(response);
+                response = resp;
+                map.getOverlays().add(response);
+                crateInstructions();
+
                 map.invalidate();
 
             }
@@ -205,19 +312,24 @@ public class MapActivity extends Activity {
             mMapController.setCenter(g);
             waypoints.add(g);
         }
-        crateInstructions();
+
         return waypoints;
     }
 
     private void crateInstructions()
     {
+        if(InstructionMarkerList!=null) {
+            for (Marker i : InstructionMarkerList) {
+                map.getOverlays().remove(i);
+            }
+        }
+        InstructionMarkerList.clear();
         for(int i=0; i<instructionList.size(); i++){
-
-
             Marker m = new Marker(map);
+            InstructionMarkerList.add(m);
             m.setIcon(getResources().getDrawable(R.drawable.marker));
             GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0),instructionList.get(i).getPoints().getLongitude(0));
-
+            double a = instructionList.get(i).getDistance();
             m.setPosition(g);
 
             Translation translation = new Translation() {
@@ -244,9 +356,12 @@ public class MapActivity extends Activity {
 
             m.setTitle(instructionList.get(i).getTurnDescription(translation));
             m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-
-            map.getOverlays().add(m);
         }
+        for (Marker i:InstructionMarkerList)
+        {
+            map.getOverlays().add(i);
+        }
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -308,4 +423,9 @@ public class MapActivity extends Activity {
         // do nothing, because back should do nothing
     }
 
+    @Override
+    protected void onDestroy() {
+        stopService(new Intent(MapActivity.this,LocationService.class));
+        super.onDestroy();
+    }
 }
