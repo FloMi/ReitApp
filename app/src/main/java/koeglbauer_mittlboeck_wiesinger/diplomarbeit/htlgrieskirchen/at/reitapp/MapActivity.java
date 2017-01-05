@@ -252,7 +252,9 @@ public class MapActivity extends Activity {
                 points.add(g);
                 points.add(h);
 
-                GHRequest req = new GHRequest(points).
+
+
+                GHRequest req = new GHRequest(getRoutFromClosestPoint(points)).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
                 req.getHints().
                         put(Parameters.Routing.INSTRUCTIONS, "true");
@@ -285,6 +287,47 @@ public class MapActivity extends Activity {
 
             }
         }.execute();
+    }
+
+    private List<GHPoint> getRoutFromClosestPoint(List<GHPoint> points) {
+
+        //currentLocation
+
+        GHPoint nextpoint = points.get(0);
+        float smalestDistance = 10000000;
+
+        for (GHPoint i:points) {
+
+            Location locationList = new Location("point List");
+
+            locationList.setLatitude(i.getLat());
+            locationList.setLongitude(i.getLon());
+
+            Location locationCurrent = new Location("point currentlocatio");
+
+            locationCurrent.setLatitude(currentLocation.getLatitude());
+            locationCurrent.setLongitude(currentLocation.getLongitude());
+
+            float distance = locationList.distanceTo(locationCurrent);
+
+            if(distance < smalestDistance)
+            {
+                smalestDistance = distance;
+                nextpoint = i;
+            }
+        }
+
+        for (int l=0; l<=points.indexOf(nextpoint)-1; l++)
+        {
+            points.remove(l);
+
+        }
+
+        GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+        points.add(0,currentGHPoint);
+
+        return points;
     }
 
     private void SetMap() {
