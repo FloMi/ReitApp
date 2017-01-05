@@ -34,7 +34,7 @@ public class TourActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = list.getItemAtPosition(position);
-                Toast.makeText(TourActivity.this, listItem.toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(TourActivity.this, listItem.toString() + " clicked", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -45,18 +45,20 @@ public class TourActivity extends AppCompatActivity {
         list.setAdapter(adapter);
         adapter.clear();
 
-        mDatabase.child("paths").addValueEventListener(new ValueEventListener() {
+        mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                adapter.clear();
                 for(DataSnapshot postSnapshot: dataSnapshot.getChildren())
                 {
-                    adapter.add(postSnapshot.toString());
+                    adapter.add(postSnapshot.getKey().toString());
+                    Toast.makeText(TourActivity.this, "datayo", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                Toast.makeText(TourActivity.this, "datafailyo", Toast.LENGTH_SHORT).show();
             }
         });
     }
