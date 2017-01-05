@@ -24,5 +24,6 @@
     <string name="activity_settings_label">Einstellungen</string>
     <string name="activity_statistics_label">Statistiken</string>
     <string name="action_logout">Ausloggen</string>
-    <string name="loggedout_toast">Erfolgreich ausgelogg</string>
+    <string name="loggedout_toast">Erfolgreich ausgeloggt</string>
+    <string name="activity_tour_label">Tour auswählen</string>
 </resources>

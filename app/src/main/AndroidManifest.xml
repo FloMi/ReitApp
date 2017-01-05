@@ -48,12 +48,18 @@
 
         <service android:enabled="true" android:name=".LocationService" />
 
-        <activity android:name=".StatisticActivity"
-            android:label="@string/activity_statistics_label"/>
-        <activity android:name=".SettingsActivity"
-            android:label="@string/activity_settings_label"/>
-        <activity android:name=".SecurityActivity"
-            android:label="@string/activity_security_label"></activity>
+        <activity
+            android:name=".StatisticActivity"
+            android:label="@string/activity_statistics_label" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/activity_settings_label" />
+        <activity
+            android:name=".SecurityActivity"
+            android:label="@string/activity_security_label" />
+        <activity
+            android:name=".TourActivity"
+            android:label="@string/activity_tour_label" />/>
     </application>
 
 </manifest>
