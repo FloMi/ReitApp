@@ -40,6 +40,8 @@ import com.google.firebase.appindexing.builders.Actions;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +64,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     private UserLoginTask mAuthTask = null;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private DatabaseReference mDatabase;
     boolean registerSucceed = false;
 
     // UI references.
@@ -77,6 +80,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         setContentView(R.layout.activity_register);
 
         mAuth = FirebaseAuth.getInstance();
+        mDatabase=FirebaseDatabase.getInstance().getReference();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -359,8 +363,10 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                             Log.w("signUp", "createUserWithEmail:onComplete:" + task.isSuccessful());
 
                             registerSucceed = task.isSuccessful();
-                            if(task.isSuccessful())
+                            if(task.isSuccessful()) {
                                 mAuth.getCurrentUser().sendEmailVerification();
+                                createNewDatabaseUser();
+                            }
                         }
                     });
 
@@ -396,6 +402,11 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             showProgress(false);
         }
 
+    }
+
+    private void createNewDatabaseUser() {
+        User user = new User(0,0,0,0);
+        mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).setValue(user);
     }
 
     @Override

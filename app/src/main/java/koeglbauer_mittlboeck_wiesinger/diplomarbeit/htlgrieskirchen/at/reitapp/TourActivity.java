@@ -44,21 +44,25 @@ public class TourActivity extends AppCompatActivity {
         adapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listItems);
         list.setAdapter(adapter);
         adapter.clear();
+        adapter.add("Touren werden geladen");
 
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                String tourString = "";
                 adapter.clear();
                 for(DataSnapshot postSnapshot: dataSnapshot.getChildren())
                 {
-                    adapter.add(postSnapshot.getKey().toString());
-                    Toast.makeText(TourActivity.this, "datayo", Toast.LENGTH_SHORT).show();
+                    tourString=postSnapshot.getKey().toString();
+                    tourString=tourString + ": " + postSnapshot.child("Name").getValue().toString();
+                    adapter.add(tourString);
                 }
+
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Toast.makeText(TourActivity.this, "datafailyo", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TourActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

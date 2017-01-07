@@ -26,4 +26,6 @@
     <string name="action_logout">Ausloggen</string>
     <string name="loggedout_toast">Erfolgreich ausgeloggt</string>
     <string name="activity_tour_label">Tour auswählen</string>
+    <string name="toast_show_tours_failed">Anzeigen der Touren fehlgeschlagen!</string>
+    <string name="toast_show_stats_failed">Fehler beim Anzeigen der Statistik</string>
 </resources>
