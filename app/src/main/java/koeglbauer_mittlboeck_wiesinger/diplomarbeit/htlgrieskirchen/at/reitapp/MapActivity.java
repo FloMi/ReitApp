@@ -9,17 +9,16 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -43,9 +42,6 @@ import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
 
-import org.osmdroid.bonuspack.routing.OSRMRoadManager;
-import org.osmdroid.bonuspack.routing.Road;
-import org.osmdroid.bonuspack.routing.RoadManager;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -54,11 +50,12 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -171,10 +168,61 @@ public class MapActivity extends Activity {
 
     private void SetGraphhopperOnStart() {
 
+
+
         new AsyncTask <Void, Void, Polyline>() {
             float time;
 
+            @Override
+            protected void onPreExecute() {
+
+                if (!isNetworkAvailable())
+                {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+
+                    builder.setTitle("Kein Internet");
+
+                    builder.setMessage("Keine Verbindung");
+                    builder.setPositiveButton("Enable Mobile Data", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            try {
+                                setMobileDataEnabled(getApplicationContext(),true);
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchFieldException e) {
+                                e.printStackTrace();
+                            } catch (IllegalAccessException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchMethodException e) {
+                                e.printStackTrace();
+                            } catch (InvocationTargetException e) {
+                                e.printStackTrace();
+                            }
+
+
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
+                    builder.show();
+
+                    this.cancel(true);
+                }
+
+                super.onPreExecute();
+
+            }
+
             protected Polyline doInBackground(Void... v) {
+
+                if (this.isCancelled())
+                {
+                    return null;
+                }
+
                 StopWatch sw = new StopWatch().start();
 
                 List<GHPoint> points;
@@ -192,7 +240,7 @@ public class MapActivity extends Activity {
                 points.add(f);
                 points.add(h);
 
-                GHRequest req = new GHRequest(points).
+                GHRequest req = new GHRequest(getRoutToStartPointFromPosition(points)).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
                 req.getHints().
                         put(Parameters.Routing.INSTRUCTIONS, "true");
@@ -201,30 +249,67 @@ public class MapActivity extends Activity {
                 gh.setDownloader(new OkHttpClient.Builder().
                         connectTimeout(5, TimeUnit.SECONDS).
                         readTimeout(5, TimeUnit.SECONDS).build());
-                GHResponse resp = gh.route(req);
-                time = sw.stop().getSeconds();
 
-                instructionList = resp.getBest().getInstructions();
-                crateInstructions();
-                Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 140, 255));
-                line.setWidth(20);
-                line.setPoints(createPolyline(resp.getBest()));
 
-                return line;
+                           GHResponse resp = gh.route(req);
+                           time = sw.stop().getSeconds();
+
+                           instructionList = resp.getBest().getInstructions();
+
+                           crateInstructions();
+                           Polyline line = new Polyline();
+                           line.setColor(Color.argb(255, 0, 140, 255));
+                           line.setWidth(20);
+
+
+                           line.setPoints(createPolyline(resp.getBest()));
+
+                           return line;
+
             }
+
 
             protected void onPostExecute(Polyline resp) {
 
-                if(response != null) map.getOverlays().remove(response);
-                response = resp;
-                map.getOverlays().add(response);
-                crateInstructions();
-
-                map.invalidate();
-
+                if(response != null)
+                {
+                    map.getOverlays().remove(response);
+                    response = resp;
+                    map.getOverlays().add(response);
+                    crateInstructions();
+                    map.invalidate();
+                }
             }
         }.execute();
+    }
+
+
+
+    public boolean isNetworkAvailable() {
+        try {
+            InetAddress ipAddr = InetAddress.getByName("google.com"); //You can replace it with your name
+            return !ipAddr.equals("");
+
+        } catch (Exception e) {
+            return false;
+        }
+
+    }
+
+    private void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        final Class conmanClass = Class.forName(conman.getClass().getName());
+        final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+        iConnectivityManagerField.setAccessible(true);
+
+        final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+        final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+
+        final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
+
+        setMobileDataEnabledMethod.setAccessible(true);
+
+        setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
     }
 
     private void SetGraphhopperActualPosition() {
@@ -232,7 +317,56 @@ public class MapActivity extends Activity {
         new AsyncTask<Void, Void, Polyline>() {
             float time;
 
+            @Override
+            protected void onPreExecute() {
+
+                if (!isNetworkAvailable())
+                {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+
+                    builder.setTitle("Kein Internet");
+
+                    builder.setMessage("Keine Verbindung");
+                    builder.setPositiveButton("Enable Mobile Data", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            try {
+                                setMobileDataEnabled(getApplicationContext(),true);
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchFieldException e) {
+                                e.printStackTrace();
+                            } catch (IllegalAccessException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchMethodException e) {
+                                e.printStackTrace();
+                            } catch (InvocationTargetException e) {
+                                e.printStackTrace();
+                            }
+
+
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
+                    builder.show();
+
+                    this.cancel(true);
+                }
+
+                super.onPreExecute();
+
+            }
+
             protected Polyline doInBackground(Void... v) {
+
+                if (this.isCancelled())
+                {
+                    return null;
+                }
+
                 StopWatch sw = new StopWatch().start();
 
                 List<GHPoint> points;
@@ -244,17 +378,16 @@ public class MapActivity extends Activity {
                 GHPoint e = new GHPoint(48.472273, 13.742282);
                 GHPoint f = new GHPoint(48.476412, 13.742110);
                 GHPoint g = new GHPoint(48.478475, 13.738012);
-                GHPoint h = new GHPoint(48.468844, 13.733946);
+
 
                 points.add(b);
                 points.add(e);
                 points.add(f);
                 points.add(g);
-                points.add(h);
 
 
 
-                GHRequest req = new GHRequest(getRoutFromClosestPoint(points)).
+                GHRequest req = new GHRequest(getRoutToClosestPointFromPosition(points)).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
                 req.getHints().
                         put(Parameters.Routing.INSTRUCTIONS, "true");
@@ -263,33 +396,46 @@ public class MapActivity extends Activity {
                 gh.setDownloader(new OkHttpClient.Builder().
                         connectTimeout(5, TimeUnit.SECONDS).
                         readTimeout(5, TimeUnit.SECONDS).build());
-                GHResponse resp = gh.route(req);
-                time = sw.stop().getSeconds();
+                if (isNetworkAvailable())
+                {
+                    GHResponse resp = gh.route(req);
+                    time = sw.stop().getSeconds();
 
-                instructionList = resp.getBest().getInstructions();
+                    instructionList = resp.getBest().getInstructions();
 
-                Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 255,000,000));
-                line.setWidth(20);
-                line.setPoints(createPolyline(resp.getBest()));
+                    crateInstructions();
+                    Polyline line = new Polyline();
+                    line.setColor(Color.argb(255, 0, 140, 255));
+                    line.setWidth(20);
 
-                return line;
+
+                    line.setPoints(createPolyline(resp.getBest()));
+
+                    return line;
+                }
+
+
+
+
+                return null;
             }
 
             protected void onPostExecute(Polyline resp) {
 
-                if(response != null) map.getOverlays().remove(response);
-                response = resp;
-                map.getOverlays().add(response);
-                crateInstructions();
+                if(response != null)
+                {
+                    map.getOverlays().remove(response);
+                    response = resp;
+                    map.getOverlays().add(response);
+                    crateInstructions();
 
-                map.invalidate();
-
+                    map.invalidate();
+                }
             }
         }.execute();
     }
 
-    private List<GHPoint> getRoutFromClosestPoint(List<GHPoint> points) {
+        private List<GHPoint> getRoutToClosestPointFromPosition(List<GHPoint> points) {
 
         //currentLocation
 
@@ -322,6 +468,17 @@ public class MapActivity extends Activity {
             points.remove(l);
 
         }
+
+        GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+        points.add(0,currentGHPoint);
+
+        return points;
+    }
+
+    private List<GHPoint> getRoutToStartPointFromPosition(List<GHPoint> points) {
+
+
 
         GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
 
@@ -415,15 +572,18 @@ public class MapActivity extends Activity {
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
             message += "\nLocation to show user location.";
         }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             message += "\nStorage access to store map tiles.";
         }
+
         if (!permissions.isEmpty()) {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             String[] params = permissions.toArray(new String[permissions.size()]);
             requestPermissions(params, REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS);
         }
+
     }
 
     /**
