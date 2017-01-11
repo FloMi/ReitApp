@@ -116,7 +116,6 @@ public class MapActivity extends Activity {
         Intent intent = new Intent(this, LocationService.class);
         startService(intent);
 
-
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
@@ -166,6 +165,43 @@ public class MapActivity extends Activity {
         startActivity(intent);
     }
 
+    private void setMobileDataEnabled(Context context, boolean enabled) {
+        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        final Class conmanClass;
+        try {
+            conmanClass = Class.forName(conman.getClass().getName());
+            final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+            iConnectivityManagerField.setAccessible(true);
+            final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+            final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+
+            final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
+
+            setMobileDataEnabledMethod.setAccessible(true);
+
+            setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
     private void SetGraphhopperOnStart() {
 
 
@@ -173,8 +209,11 @@ public class MapActivity extends Activity {
         new AsyncTask <Void, Void, Polyline>() {
             float time;
 
+
+
             @Override
             protected void onPreExecute() {
+
 
                 if (!isNetworkAvailable())
                 {
@@ -182,24 +221,11 @@ public class MapActivity extends Activity {
 
                     builder.setTitle("Kein Internet");
 
-                    builder.setMessage("Keine Verbindung");
-                    builder.setPositiveButton("Enable Mobile Data", new DialogInterface.OnClickListener() {
+                    builder.setMessage("Stellen sie eine einternet verbindung her");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            try {
-                                setMobileDataEnabled(getApplicationContext(),true);
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchFieldException e) {
-                                e.printStackTrace();
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchMethodException e) {
-                                e.printStackTrace();
-                            } catch (InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
 
-
+                            return;
                         }
                     });
                     builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -228,17 +254,16 @@ public class MapActivity extends Activity {
                 List<GHPoint> points;
                 points = new ArrayList<GHPoint>(6);
 
-                GHPoint b = new GHPoint(48.468844, 13.733946);
-                GeoPoint s = new GeoPoint(b.getLat(),b.getLon());
-                startingPoint = s;
                 GHPoint e = new GHPoint(48.472273, 13.742282);
-                GHPoint f = new GHPoint(48.476809, 13.738836);
-                GHPoint h = new GHPoint(48.468844, 13.733946);
+                GeoPoint s = new GeoPoint(e.getLat(),e.getLon());
+                startingPoint = s;
+                GHPoint f = new GHPoint(48.476412, 13.742110);
+                GHPoint g = new GHPoint(48.478475, 13.738012);
 
-                points.add(b);
+
                 points.add(e);
                 points.add(f);
-                points.add(h);
+                points.add(g);
 
                 GHRequest req = new GHRequest(getRoutToStartPointFromPosition(points)).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
@@ -251,71 +276,42 @@ public class MapActivity extends Activity {
                         readTimeout(5, TimeUnit.SECONDS).build());
 
 
-                           GHResponse resp = gh.route(req);
-                           time = sw.stop().getSeconds();
+                GHResponse resp = gh.route(req);
+                time = sw.stop().getSeconds();
 
-                           instructionList = resp.getBest().getInstructions();
+                instructionList = resp.getBest().getInstructions();
 
-                           crateInstructions();
-                           Polyline line = new Polyline();
-                           line.setColor(Color.argb(255, 0, 140, 255));
-                           line.setWidth(20);
+                crateInstructions();
+                Polyline line = new Polyline();
+                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setWidth(20);
 
 
-                           line.setPoints(createPolyline(resp.getBest()));
+                line.setPoints(createPolyline(resp.getBest()));
 
-                           return line;
+                return line;
 
             }
 
 
             protected void onPostExecute(Polyline resp) {
 
-                if(response != null)
-                {
+
                     map.getOverlays().remove(response);
                     response = resp;
                     map.getOverlays().add(response);
                     crateInstructions();
                     map.invalidate();
-                }
+
             }
         }.execute();
-    }
-
-
-
-    public boolean isNetworkAvailable() {
-        try {
-            InetAddress ipAddr = InetAddress.getByName("google.com"); //You can replace it with your name
-            return !ipAddr.equals("");
-
-        } catch (Exception e) {
-            return false;
-        }
-
-    }
-
-    private void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        final Class conmanClass = Class.forName(conman.getClass().getName());
-        final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
-        iConnectivityManagerField.setAccessible(true);
-
-        final Object iConnectivityManager = iConnectivityManagerField.get(conman);
-        final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
-
-        final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-
-        setMobileDataEnabledMethod.setAccessible(true);
-
-        setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
     }
 
     private void SetGraphhopperActualPosition() {
 
         new AsyncTask<Void, Void, Polyline>() {
             float time;
+
 
             @Override
             protected void onPreExecute() {
@@ -326,24 +322,11 @@ public class MapActivity extends Activity {
 
                     builder.setTitle("Kein Internet");
 
-                    builder.setMessage("Keine Verbindung");
-                    builder.setPositiveButton("Enable Mobile Data", new DialogInterface.OnClickListener() {
+                    builder.setMessage("Stellen sie eine einternet verbindung her");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            try {
-                                setMobileDataEnabled(getApplicationContext(),true);
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchFieldException e) {
-                                e.printStackTrace();
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchMethodException e) {
-                                e.printStackTrace();
-                            } catch (InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
 
-
+                            return;
                         }
                     });
                     builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -396,9 +379,7 @@ public class MapActivity extends Activity {
                 gh.setDownloader(new OkHttpClient.Builder().
                         connectTimeout(5, TimeUnit.SECONDS).
                         readTimeout(5, TimeUnit.SECONDS).build());
-                if (isNetworkAvailable())
-                {
-                    GHResponse resp = gh.route(req);
+                GHResponse resp = gh.route(req);
                     time = sw.stop().getSeconds();
 
                     instructionList = resp.getBest().getInstructions();
@@ -412,25 +393,19 @@ public class MapActivity extends Activity {
                     line.setPoints(createPolyline(resp.getBest()));
 
                     return line;
-                }
 
-
-
-
-                return null;
             }
 
             protected void onPostExecute(Polyline resp) {
 
-                if(response != null)
-                {
+
                     map.getOverlays().remove(response);
                     response = resp;
                     map.getOverlays().add(response);
                     crateInstructions();
 
                     map.invalidate();
-                }
+
             }
         }.execute();
     }
@@ -466,7 +441,6 @@ public class MapActivity extends Activity {
         for (int l=0; l<=points.indexOf(nextpoint)-1; l++)
         {
             points.remove(l);
-
         }
 
         GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
@@ -477,8 +451,6 @@ public class MapActivity extends Activity {
     }
 
     private List<GHPoint> getRoutToStartPointFromPosition(List<GHPoint> points) {
-
-
 
         GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
 
