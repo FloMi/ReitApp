@@ -16,11 +16,13 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -56,8 +58,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -67,18 +73,23 @@ import okhttp3.OkHttpClient;
 public class MapActivity extends Activity {
 
     private static MapView map;
-    private MapController mMapController;
+    private static MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
     private GoogleApiClient client;
     private InstructionList instructionList;
     ArrayList<OverlayItem> overlayItemArray;
     LocationService mLocationService;
-    //MyLocationOverlay myLocationOverlay = null;
     LocationManager locationManager;
     static GeoPoint currentLocation;
-    private GeoPoint startingPoint;
+    private GHPoint startingPoint;
     Polyline response;
     List<Marker> InstructionMarkerList = new ArrayList<Marker>();
+    static List<GeoPoint> MovedDistance = new ArrayList<GeoPoint>();
+    static ArrayList<GeoPoint> PolylineWaypoints = new ArrayList<GeoPoint>();
+
+    static private Double DistanceToGoal = 0.0;
+    static TextView togoal;
+
 
     static Marker currentLocationMarker;
 
@@ -87,6 +98,9 @@ public class MapActivity extends Activity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+        togoal = (TextView) findViewById(R.id.togoal);
+
 
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
@@ -204,12 +218,8 @@ public class MapActivity extends Activity {
 
     private void SetGraphhopperOnStart() {
 
-
-
         new AsyncTask <Void, Void, Polyline>() {
             float time;
-
-
 
             @Override
             protected void onPreExecute() {
@@ -255,7 +265,7 @@ public class MapActivity extends Activity {
                 points = new ArrayList<GHPoint>(6);
 
                 GHPoint e = new GHPoint(48.472273, 13.742282);
-                GeoPoint s = new GeoPoint(e.getLat(),e.getLon());
+                GHPoint s = new GHPoint(e.getLat(),e.getLon());
                 startingPoint = s;
                 GHPoint f = new GHPoint(48.476412, 13.742110);
                 GHPoint g = new GHPoint(48.478475, 13.738012);
@@ -280,6 +290,8 @@ public class MapActivity extends Activity {
                 time = sw.stop().getSeconds();
 
                 instructionList = resp.getBest().getInstructions();
+
+                DistanceToGoal = resp.getBest().getDistance();
 
                 crateInstructions();
                 Polyline line = new Polyline();
@@ -356,19 +368,17 @@ public class MapActivity extends Activity {
                 points = new ArrayList<GHPoint>(6);
 
                 GHPoint b = new GHPoint(48.468844, 13.733946);
-                GeoPoint s = new GeoPoint(b.getLat(),b.getLon());
+                GHPoint s = new GHPoint(b.getLat(),b.getLon());
                 startingPoint = s;
                 GHPoint e = new GHPoint(48.472273, 13.742282);
                 GHPoint f = new GHPoint(48.476412, 13.742110);
-                GHPoint g = new GHPoint(48.478475, 13.738012);
+                GHPoint g = new GHPoint(48.481818, 13.732744);
 
 
                 points.add(b);
                 points.add(e);
                 points.add(f);
                 points.add(g);
-
-
 
                 GHRequest req = new GHRequest(getRoutToClosestPointFromPosition(points)).
                         setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
@@ -384,22 +394,21 @@ public class MapActivity extends Activity {
 
                     instructionList = resp.getBest().getInstructions();
 
-                    crateInstructions();
+                    DistanceToGoal = resp.getBest().getDistance();
+
+                crateInstructions();
                     Polyline line = new Polyline();
                     line.setColor(Color.argb(255, 0, 140, 255));
                     line.setWidth(20);
 
-
                     line.setPoints(createPolyline(resp.getBest()));
 
                     return line;
-
             }
 
             protected void onPostExecute(Polyline resp) {
 
-
-                    map.getOverlays().remove(response);
+                map.getOverlays().remove(response);
                     response = resp;
                     map.getOverlays().add(response);
                     crateInstructions();
@@ -410,9 +419,102 @@ public class MapActivity extends Activity {
         }.execute();
     }
 
-        private List<GHPoint> getRoutToClosestPointFromPosition(List<GHPoint> points) {
+    public static void calcWayToGoal(GeoPoint currentLocation) {
 
-        //currentLocation
+        DistanceToGoal = 0.0;
+
+        if (PolylineWaypoints.size() > 0)
+        {
+            List<GeoPoint> PointsToFinish = getRoutLeft(PolylineWaypoints);
+
+            for (int i=0; i<PointsToFinish.size()-1; i++ ) {
+
+                Location actualLocation = new Location("actualLocation");
+
+                actualLocation.setLatitude(PointsToFinish.get(i).getLatitude());
+                actualLocation.setLongitude(PointsToFinish.get(i).getLongitude());
+
+                Location nextLoaction = new Location("nextLoaction");
+
+                nextLoaction.setLatitude(PointsToFinish.get(i+1).getLatitude());
+                nextLoaction.setLongitude(PointsToFinish.get(i+1).getLongitude());
+
+                DistanceToGoal = DistanceToGoal + (double) actualLocation.distanceTo(nextLoaction);
+            }
+        }
+
+        if (DistanceToGoal!=0)
+        {
+            String s = GetDistanceString(DistanceToGoal);
+            togoal.setText(s);
+            togoal.invalidate();
+        }
+        else
+        {
+            togoal.setText("");
+            togoal.invalidate();
+        }
+    }
+
+    public static void startRecordingHike(GeoPoint currentLocation) {
+
+        mMapController.animateTo(currentLocation);
+        MovedDistance.add(currentLocation);
+
+
+
+    }
+
+
+
+    private static String GetDistanceString(Double distance) {
+
+        DecimalFormat df = new DecimalFormat("#.##");
+
+        if(distance<999.99999999999) return (df.format(distance)+" m");
+
+        return df.format(distance/1000) + "Km";
+    }
+
+    private static List<GeoPoint> getRoutLeft(List<GeoPoint> points) {
+
+        GeoPoint nextpoint = points.get(0);
+        float smalestDistance = 10000000;
+
+        for (GeoPoint i:points) {
+
+            Location locationList = new Location("point List");
+
+            locationList.setLatitude(i.getLatitude());
+            locationList.setLongitude(i.getLongitude());
+
+            Location locationCurrent = new Location("point currentlocatio");
+
+            locationCurrent.setLatitude(currentLocation.getLatitude());
+            locationCurrent.setLongitude(currentLocation.getLongitude());
+
+            float distance = locationList.distanceTo(locationCurrent);
+
+            if(distance < smalestDistance)
+            {
+                smalestDistance = distance;
+                nextpoint = i;
+            }
+        }
+
+        for (int l=0; l<=points.indexOf(nextpoint)-1; l++)
+        {
+            points.remove(l);
+        }
+
+        GeoPoint currentGHPoint = new GeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+        points.add(0,currentGHPoint);
+
+        return points;
+    }
+
+    private List<GHPoint> getRoutToClosestPointFromPosition(List<GHPoint> points) {
 
         GHPoint nextpoint = points.get(0);
         float smalestDistance = 10000000;
@@ -474,7 +576,7 @@ public class MapActivity extends Activity {
 
     private  ArrayList<GeoPoint> createPolyline(PathWrapper response) {
 
-        ArrayList<GeoPoint> waypoints = new ArrayList<GeoPoint>();
+        PolylineWaypoints.clear();
 
         PointList tmp = response.getPoints();
 
@@ -482,10 +584,10 @@ public class MapActivity extends Activity {
 
             GeoPoint g = new GeoPoint(tmp.getLatitude(i), tmp.getLongitude(i));
             mMapController.setCenter(g);
-            waypoints.add(g);
+            PolylineWaypoints.add(g);
         }
 
-        return waypoints;
+        return PolylineWaypoints;
     }
 
     private void crateInstructions()

@@ -164,14 +164,15 @@ public class LocationService extends Service {
             if(isBetterLocation(loc, previousBestLocation)) {
                 loc.getLatitude();
                 loc.getLongitude();
-                intent.putExtra("Latitude", loc.getLatitude());
-                intent.putExtra("Longitude", loc.getLongitude());
-                intent.putExtra("Provider", loc.getProvider());
+                //intent.putExtra("Latitude", loc.getLatitude());
+                //intent.putExtra("Longitude", loc.getLongitude());
+                //intent.putExtra("Provider", loc.getProvider());
                 //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
                 GeoPoint currentLocation = new GeoPoint(loc);
 
                 MapActivity.displayMyCurrentLocationOverlay(currentLocation);
-
+                MapActivity.calcWayToGoal(currentLocation);
+                MapActivity.startRecordingHike(currentLocation);
                 sendBroadcast(intent);
 
             }
