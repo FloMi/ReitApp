@@ -44,6 +44,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -405,7 +406,10 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     }
 
     private void createNewDatabaseUser() {
-        User user = new User(0,0,0,0);
+        List<Integer> list = new ArrayList<>();
+        list.add(0);
+        list.add(1);
+        User user = new User(0,0,0,0, mAuth.getCurrentUser().getEmail(), list);
         mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).setValue(user);
     }
 

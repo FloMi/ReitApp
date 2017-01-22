@@ -16,4 +16,11 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true" />
+    <ProgressBar
+        android:id="@+id/tour_progress"
+        style="@android:style/Widget.Material.Light.ProgressBar.Large"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
 </RelativeLayout>
