@@ -59,8 +59,6 @@ public class StatisticActivity extends AppCompatActivity {
                         case "range":kilom.setText(postSnapshot.getValue().toString());break;
                         case "gast":gast.setText(postSnapshot.getValue().toString());break;
                         case "kult":kult.setText(postSnapshot.getValue().toString());break;
-                        default:
-                            Toast.makeText(StatisticActivity.this, R.string.toast_show_stats_failed, Toast.LENGTH_SHORT).show();
                     }
                 }
                 showProgress(false);

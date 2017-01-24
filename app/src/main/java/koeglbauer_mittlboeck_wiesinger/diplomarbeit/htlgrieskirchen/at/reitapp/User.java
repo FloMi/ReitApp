@@ -1,5 +1,6 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -13,13 +14,15 @@ public class User {
     int kult;
     String email;
     List<Integer> whichTourFinished;
+    Date status;
 
     public User()
     {
 
     }
 
-    public User(int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished) {
+    public User(Date status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished) {
+        this.status = status;
         this.finishedTour = finishedTour;
         this.range = range;
         this.gast = gast;
@@ -50,5 +53,9 @@ public class User {
 
     public List<Integer> getWhichTourFinished() {
         return whichTourFinished;
+    }
+
+    public Date getStatus() {
+        return status;
     }
 }

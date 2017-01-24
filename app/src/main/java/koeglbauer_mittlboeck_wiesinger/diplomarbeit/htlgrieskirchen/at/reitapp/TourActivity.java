@@ -30,7 +30,6 @@ public class TourActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
     private View mProgressView;
-    private View mTourView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
