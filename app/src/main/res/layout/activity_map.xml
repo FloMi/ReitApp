@@ -35,8 +35,15 @@
             android:id="@+id/togoal"
             android:layout_width="200px"
             android:layout_height="70px"
-            android:text="Test"
+            android:text=""
             android:layout_above="@id/startrout"/>
+
+        <TextView
+            android:id="@+id/currentInstruction"
+            android:layout_width="2000px"
+            android:layout_height="70px"
+            android:text=""
+            android:layout_above="@id/togoal"/>
 
     </RelativeLayout>
 </RelativeLayout>

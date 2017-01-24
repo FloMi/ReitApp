@@ -16,7 +16,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -32,6 +31,11 @@ import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.graphhopper.util.PointList;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
@@ -57,41 +61,42 @@ import org.osmdroid.views.overlay.Polyline;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 
+import static java.lang.Integer.valueOf;
+
 public class MapActivity extends Activity {
 
+    static GeoPoint currentLocation;
+    static List<GeoPoint> MovedDistance = new ArrayList<>();
+    static ArrayList<GeoPoint> PolylineWaypoints = new ArrayList<>();
+    static TextView togoal;
+    static TextView currentInstruction;
+    static private Double DistanceToGoal = 0.0;
+    static Marker currentLocationMarker;
+    static private InstructionList instructionList;
+    static Polyline CoverdTrack;
     private static MapView map;
     private static MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
+    private GHPoint startingPoint;
     private GoogleApiClient client;
-    private InstructionList instructionList;
+    private static boolean navigationStartet = false;
+    private DatabaseReference mDatabase;
     ArrayList<OverlayItem> overlayItemArray;
     LocationService mLocationService;
     LocationManager locationManager;
-    static GeoPoint currentLocation;
-    private GHPoint startingPoint;
     Polyline response;
-    List<Marker> InstructionMarkerList = new ArrayList<Marker>();
-    static List<GeoPoint> MovedDistance = new ArrayList<GeoPoint>();
-    static ArrayList<GeoPoint> PolylineWaypoints = new ArrayList<GeoPoint>();
-
-    static private Double DistanceToGoal = 0.0;
-    static TextView togoal;
-
-
-    static Marker currentLocationMarker;
+    List<Marker> InstructionMarkerList = new ArrayList<>();
+    List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
+    private String message = "0";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -99,7 +104,13 @@ public class MapActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
+        Intent intent = getIntent();
+        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+
+        mDatabase = FirebaseDatabase.getInstance().getReference();
         togoal = (TextView) findViewById(R.id.togoal);
+        currentInstruction = (TextView) findViewById(R.id.currentInstruction);
+
 
 
         if (Build.VERSION.SDK_INT >= 23) {
@@ -110,11 +121,9 @@ public class MapActivity extends Activity {
         myFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 openUserActivity();
-                stopService(new Intent(MapActivity.this,LocationService.class));
-
+                stopService(new Intent(MapActivity.this, LocationService.class));
             }
         });
-
         Button startNav = (Button) findViewById(R.id.startrout);
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -126,9 +135,8 @@ public class MapActivity extends Activity {
 
         SetMap();
 
-
-        Intent intent = new Intent(this, LocationService.class);
-        startService(intent);
+        Intent i = new Intent(this, LocationService.class);
+        startService(i);
 
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
@@ -136,34 +144,41 @@ public class MapActivity extends Activity {
         currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.point));
     }
 
-    private void startNavigation() {
+    private void InitTourList() {
 
+        mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                int tourString;
+                for(DataSnapshot postSnapshot: dataSnapshot.getChildren())
+                {
+                    tourString=valueOf(postSnapshot.getKey());
+                    String[] parts = message.split(":");
+                    if(tourString == valueOf(parts[0]))
+                    {
+                        postSnapshot.child("Coordinates").getChildren();
 
+                        for(DataSnapshot ps: postSnapshot.child("Coordinates").getChildren())
+                        {
+                            Double l = Double.parseDouble(ps.child("geoLength").getValue().toString());
+                            Double w = Double.parseDouble(ps.child("geoWidth").getValue().toString());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+                            GeoPoint g = new GeoPoint(w,l);
+                            DatabaseCoordinates.add(g);
+                        }
+                    }
+                }
+            }
 
-        builder.setTitle("Start Punkt");
-
-        builder.setMessage("Von wo navigieren?");
-        builder.setPositiveButton("Aktueller Standpunkt ", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                SetGraphhopperActualPosition();
-
-
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Startpunkt des Wegs ", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                SetGraphhopperOnStart();
-
-
-            }
-        });
-        builder.show();
+        drawPath();
     }
 
-    public static void displayMyCurrentLocationOverlay(GeoPoint Location)
-    {
+    public static void displayMyCurrentLocationOverlay(GeoPoint Location) {
         currentLocation = Location;
         map.getOverlays().remove(currentLocationMarker);
         currentLocationMarker.setPosition(currentLocation);
@@ -173,6 +188,140 @@ public class MapActivity extends Activity {
         map.getOverlays().add(currentLocationMarker);
     }
 
+    public static void calcWayToGoal(GeoPoint currentLocation) {
+
+        //if (!navigationStartet) return;
+
+        DistanceToGoal = 0.0;
+
+        if (PolylineWaypoints.size() > 0) {
+            List<GeoPoint> PointsToFinish = getRoutLeft(PolylineWaypoints);
+
+            for (int i = 0; i < PointsToFinish.size() - 1; i++) {
+
+                Location actualLocation = new Location("actualLocation");
+
+                actualLocation.setLatitude(PointsToFinish.get(i).getLatitude());
+                actualLocation.setLongitude(PointsToFinish.get(i).getLongitude());
+
+                Location nextLoaction = new Location("nextLoaction");
+
+                nextLoaction.setLatitude(PointsToFinish.get(i + 1).getLatitude());
+                nextLoaction.setLongitude(PointsToFinish.get(i + 1).getLongitude());
+
+                DistanceToGoal = DistanceToGoal + (double) actualLocation.distanceTo(nextLoaction);
+            }
+        }
+
+        if (DistanceToGoal != 0) {
+            String s = GetDistanceString(DistanceToGoal);
+            togoal.setText(s);
+            togoal.invalidate();
+        } else {
+            togoal.setText("");
+            togoal.invalidate();
+        }
+    }
+
+    public static void startRecordingHike(GeoPoint cl, String s) {
+
+
+
+        if (navigationStartet)
+        {
+            if (s.equals("gps"))
+            {
+                if (MovedDistance.size() == 0)
+                {
+                    //mMapController.animateTo(currentLocation);
+                    MovedDistance.add(currentLocation);
+                }
+                else
+                {
+                    float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size()-1));
+
+                    if (d>(float)3)
+                    {
+
+                        movedForward(cl);
+                        //mMapController.animateTo(currentLocation);
+
+                        MovedDistance.add(currentLocation);
+                    }
+                }
+            }
+
+            Polyline l = new Polyline();
+            l.setColor(Color.argb(255, 255, 0, 0));
+            l.setWidth(20);
+
+            l.setPoints(MovedDistance);
+
+            map.getOverlays().remove(l);
+            CoverdTrack = l;
+            map.getOverlays().add(CoverdTrack);
+            map.invalidate();
+        }
+    }
+
+    private static void movedForward(GeoPoint cl) {
+
+
+
+
+
+    }
+
+    private static String GetDistanceString(Double distance) {
+
+        DecimalFormat df = new DecimalFormat("#.##");
+
+        if (distance < 999.99999999999) return (df.format(distance) + " m");
+
+        return df.format(distance / 1000) + "Km";
+    }
+
+    private static List<GeoPoint> getRoutLeft(List<GeoPoint> points) {
+
+        GeoPoint nextpoint = points.get(0);
+        float smalestDistance = 10000000;
+
+        for (GeoPoint i : points) {
+
+            Location locationList = new Location("point List");
+
+            locationList.setLatitude(i.getLatitude());
+            locationList.setLongitude(i.getLongitude());
+
+            Location locationCurrent = new Location("point currentlocatio");
+
+            locationCurrent.setLatitude(currentLocation.getLatitude());
+            locationCurrent.setLongitude(currentLocation.getLongitude());
+
+            float distance = locationList.distanceTo(locationCurrent);
+
+            if (distance < smalestDistance) {
+                smalestDistance = distance;
+                nextpoint = i;
+            }
+        }
+
+        for (int l = 0; l <= points.indexOf(nextpoint) - 1; l++) {
+            points.remove(l);
+        }
+
+        GeoPoint currentGHPoint = new GeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+        points.add(0, currentGHPoint);
+
+        return points;
+    }
+
+    private void startNavigation() {
+                InitTourList();
+
+                navigationStartet = true;
+    }
 
     private void openUserActivity() {
         Intent intent = new Intent(this, MainMenuActivity.class);
@@ -216,107 +365,20 @@ public class MapActivity extends Activity {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    private void SetGraphhopperOnStart() {
+    private void drawPath() {
 
-        new AsyncTask <Void, Void, Polyline>() {
-            float time;
-
-            @Override
-            protected void onPreExecute() {
-
-
-                if (!isNetworkAvailable())
-                {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-
-                    builder.setTitle("Kein Internet");
-
-                    builder.setMessage("Stellen sie eine einternet verbindung her");
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            return;
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            return;
-                        }
-                    });
-                    builder.show();
-
-                    this.cancel(true);
-                }
-
-                super.onPreExecute();
-
-            }
-
-            protected Polyline doInBackground(Void... v) {
-
-                if (this.isCancelled())
-                {
-                    return null;
-                }
-
-                StopWatch sw = new StopWatch().start();
-
-                List<GHPoint> points;
-                points = new ArrayList<GHPoint>(6);
-
-                GHPoint e = new GHPoint(48.472273, 13.742282);
-                GHPoint s = new GHPoint(e.getLat(),e.getLon());
-                startingPoint = s;
-                GHPoint f = new GHPoint(48.476412, 13.742110);
-                GHPoint g = new GHPoint(48.478475, 13.738012);
-
-
-                points.add(e);
-                points.add(f);
-                points.add(g);
-
-                GHRequest req = new GHRequest(getRoutToStartPointFromPosition(points)).
-                        setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
-                req.getHints().
-                        put(Parameters.Routing.INSTRUCTIONS, "true");
-                GraphHopperWeb gh = new GraphHopperWeb();
-                gh.setKey("32565c22-5144-4700-b089-a78f30b6044a");
-                gh.setDownloader(new OkHttpClient.Builder().
-                        connectTimeout(5, TimeUnit.SECONDS).
-                        readTimeout(5, TimeUnit.SECONDS).build());
-
-
-                GHResponse resp = gh.route(req);
-                time = sw.stop().getSeconds();
-
-                instructionList = resp.getBest().getInstructions();
-
-                DistanceToGoal = resp.getBest().getDistance();
-
-                crateInstructions();
                 Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setColor(Color.argb(255, 0, 200, 255));
                 line.setWidth(20);
 
+                line.setPoints(DatabaseCoordinates);
 
-                line.setPoints(createPolyline(resp.getBest()));
-
-                return line;
-
-            }
-
-
-            protected void onPostExecute(Polyline resp) {
+                map.getOverlays().remove(line);
+                map.getOverlays().add(line);
+                //crateInstructions();
+                map.invalidate();
 
 
-                    map.getOverlays().remove(response);
-                    response = resp;
-                    map.getOverlays().add(response);
-                    crateInstructions();
-                    map.invalidate();
-
-            }
-        }.execute();
     }
 
     private void SetGraphhopperActualPosition() {
@@ -328,8 +390,7 @@ public class MapActivity extends Activity {
             @Override
             protected void onPreExecute() {
 
-                if (!isNetworkAvailable())
-                {
+                if (!isNetworkAvailable()) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
 
                     builder.setTitle("Kein Internet");
@@ -357,8 +418,7 @@ public class MapActivity extends Activity {
 
             protected Polyline doInBackground(Void... v) {
 
-                if (this.isCancelled())
-                {
+                if (this.isCancelled()) {
                     return null;
                 }
 
@@ -367,12 +427,12 @@ public class MapActivity extends Activity {
                 List<GHPoint> points;
                 points = new ArrayList<GHPoint>(6);
 
-                GHPoint b = new GHPoint(48.468844, 13.733946);
-                GHPoint s = new GHPoint(b.getLat(),b.getLon());
+                GHPoint b = new GHPoint(48.092896, 13.565618);
+                GHPoint s = new GHPoint(b.getLat(), b.getLon());
                 startingPoint = s;
-                GHPoint e = new GHPoint(48.472273, 13.742282);
-                GHPoint f = new GHPoint(48.476412, 13.742110);
-                GHPoint g = new GHPoint(48.481818, 13.732744);
+                GHPoint e = new GHPoint(48.090331, 13.571295);
+                GHPoint f = new GHPoint(48.093433, 13.571091);
+                GHPoint g = new GHPoint(48.092896, 13.565618);
 
 
                 points.add(b);
@@ -390,128 +450,33 @@ public class MapActivity extends Activity {
                         connectTimeout(5, TimeUnit.SECONDS).
                         readTimeout(5, TimeUnit.SECONDS).build());
                 GHResponse resp = gh.route(req);
-                    time = sw.stop().getSeconds();
+                time = sw.stop().getSeconds();
 
-                    instructionList = resp.getBest().getInstructions();
+                instructionList = resp.getBest().getInstructions();
 
-                    DistanceToGoal = resp.getBest().getDistance();
+                DistanceToGoal = resp.getBest().getDistance();
 
                 crateInstructions();
-                    Polyline line = new Polyline();
-                    line.setColor(Color.argb(255, 0, 140, 255));
-                    line.setWidth(20);
+                Polyline line = new Polyline();
+                line.setColor(Color.argb(255, 0, 140, 255));
+                line.setWidth(20);
 
-                    line.setPoints(createPolyline(resp.getBest()));
+                line.setPoints(createPolyline(resp.getBest()));
 
-                    return line;
+                return line;
             }
 
             protected void onPostExecute(Polyline resp) {
 
                 map.getOverlays().remove(response);
-                    response = resp;
-                    map.getOverlays().add(response);
-                    crateInstructions();
+                response = resp;
+                map.getOverlays().add(response);
+                crateInstructions();
 
-                    map.invalidate();
+                map.invalidate();
 
             }
         }.execute();
-    }
-
-    public static void calcWayToGoal(GeoPoint currentLocation) {
-
-        DistanceToGoal = 0.0;
-
-        if (PolylineWaypoints.size() > 0)
-        {
-            List<GeoPoint> PointsToFinish = getRoutLeft(PolylineWaypoints);
-
-            for (int i=0; i<PointsToFinish.size()-1; i++ ) {
-
-                Location actualLocation = new Location("actualLocation");
-
-                actualLocation.setLatitude(PointsToFinish.get(i).getLatitude());
-                actualLocation.setLongitude(PointsToFinish.get(i).getLongitude());
-
-                Location nextLoaction = new Location("nextLoaction");
-
-                nextLoaction.setLatitude(PointsToFinish.get(i+1).getLatitude());
-                nextLoaction.setLongitude(PointsToFinish.get(i+1).getLongitude());
-
-                DistanceToGoal = DistanceToGoal + (double) actualLocation.distanceTo(nextLoaction);
-            }
-        }
-
-        if (DistanceToGoal!=0)
-        {
-            String s = GetDistanceString(DistanceToGoal);
-            togoal.setText(s);
-            togoal.invalidate();
-        }
-        else
-        {
-            togoal.setText("");
-            togoal.invalidate();
-        }
-    }
-
-    public static void startRecordingHike(GeoPoint currentLocation) {
-
-        mMapController.animateTo(currentLocation);
-        MovedDistance.add(currentLocation);
-
-
-
-    }
-
-
-
-    private static String GetDistanceString(Double distance) {
-
-        DecimalFormat df = new DecimalFormat("#.##");
-
-        if(distance<999.99999999999) return (df.format(distance)+" m");
-
-        return df.format(distance/1000) + "Km";
-    }
-
-    private static List<GeoPoint> getRoutLeft(List<GeoPoint> points) {
-
-        GeoPoint nextpoint = points.get(0);
-        float smalestDistance = 10000000;
-
-        for (GeoPoint i:points) {
-
-            Location locationList = new Location("point List");
-
-            locationList.setLatitude(i.getLatitude());
-            locationList.setLongitude(i.getLongitude());
-
-            Location locationCurrent = new Location("point currentlocatio");
-
-            locationCurrent.setLatitude(currentLocation.getLatitude());
-            locationCurrent.setLongitude(currentLocation.getLongitude());
-
-            float distance = locationList.distanceTo(locationCurrent);
-
-            if(distance < smalestDistance)
-            {
-                smalestDistance = distance;
-                nextpoint = i;
-            }
-        }
-
-        for (int l=0; l<=points.indexOf(nextpoint)-1; l++)
-        {
-            points.remove(l);
-        }
-
-        GeoPoint currentGHPoint = new GeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-        points.add(0,currentGHPoint);
-
-        return points;
     }
 
     private List<GHPoint> getRoutToClosestPointFromPosition(List<GHPoint> points) {
@@ -519,7 +484,7 @@ public class MapActivity extends Activity {
         GHPoint nextpoint = points.get(0);
         float smalestDistance = 10000000;
 
-        for (GHPoint i:points) {
+        for (GHPoint i : points) {
 
             Location locationList = new Location("point List");
 
@@ -533,21 +498,19 @@ public class MapActivity extends Activity {
 
             float distance = locationList.distanceTo(locationCurrent);
 
-            if(distance < smalestDistance)
-            {
+            if (distance < smalestDistance) {
                 smalestDistance = distance;
                 nextpoint = i;
             }
         }
 
-        for (int l=0; l<=points.indexOf(nextpoint)-1; l++)
-        {
+        for (int l = 0; l <= points.indexOf(nextpoint) - 1; l++) {
             points.remove(l);
         }
 
         GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
 
-        points.add(0,currentGHPoint);
+        points.add(0, currentGHPoint);
 
         return points;
     }
@@ -556,12 +519,13 @@ public class MapActivity extends Activity {
 
         GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
 
-        points.add(0,currentGHPoint);
+        points.add(0, currentGHPoint);
 
         return points;
     }
 
     private void SetMap() {
+
 
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
@@ -570,11 +534,11 @@ public class MapActivity extends Activity {
 
         mMapController = (MapController) map.getController();
         mMapController.setZoom(17);
-        GeoPoint s = new GeoPoint(48.473191, 13.738506);
+        GeoPoint s = new GeoPoint(48.092907, 13.565829);
         mMapController.setCenter(s);
     }
 
-    private  ArrayList<GeoPoint> createPolyline(PathWrapper response) {
+    private ArrayList<GeoPoint> createPolyline(PathWrapper response) {
 
         PolylineWaypoints.clear();
 
@@ -590,19 +554,18 @@ public class MapActivity extends Activity {
         return PolylineWaypoints;
     }
 
-    private void crateInstructions()
-    {
-        if(InstructionMarkerList!=null) {
+    private void crateInstructions() {
+        if (InstructionMarkerList != null) {
             for (Marker i : InstructionMarkerList) {
                 map.getOverlays().remove(i);
             }
         }
         InstructionMarkerList.clear();
-        for(int i=0; i<instructionList.size(); i++){
+        for (int i = 0; i < instructionList.size(); i++) {
             Marker m = new Marker(map);
             InstructionMarkerList.add(m);
             m.setIcon(getResources().getDrawable(R.drawable.marker));
-            GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0),instructionList.get(i).getPoints().getLongitude(0));
+            GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0), instructionList.get(i).getPoints().getLongitude(0));
             double a = instructionList.get(i).getDistance();
             m.setPosition(g);
 
@@ -631,8 +594,7 @@ public class MapActivity extends Activity {
             m.setTitle(instructionList.get(i).getTurnDescription(translation));
             m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         }
-        for (Marker i:InstructionMarkerList)
-        {
+        for (Marker i : InstructionMarkerList) {
             map.getOverlays().add(i);
         }
 
@@ -695,6 +657,7 @@ public class MapActivity extends Activity {
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
+
     @Override
     public void onBackPressed() {
         // do nothing, because back should do nothing
@@ -702,7 +665,45 @@ public class MapActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        stopService(new Intent(MapActivity.this,LocationService.class));
+        stopService(new Intent(MapActivity.this, LocationService.class));
         super.onDestroy();
+    }
+
+    public static void gotOffCourse(GeoPoint current) {
+if (PolylineWaypoints.size()>0)
+{
+    float distance = 0;
+    int count = 0;
+    for (GeoPoint i :PolylineWaypoints)
+    {
+
+        Location actualLocation = new Location("actualLocation");
+
+        actualLocation.setLatitude(currentLocation.getLatitude());
+        actualLocation.setLongitude(currentLocation.getLongitude());
+
+        Location anyLocation = new Location("nextLoaction");
+
+        anyLocation.setLatitude(i.getLatitude());
+        anyLocation.setLongitude(i.getLongitude());
+
+        if (count == 0)
+        {
+            distance = actualLocation.distanceTo(anyLocation);
+        }
+
+        if (actualLocation.distanceTo(anyLocation) < distance)
+        {
+            distance = actualLocation.distanceTo(anyLocation);
+        }
+        count++;
+    }
+    if(distance> 50)
+    {
+        currentInstruction.setText("Sie verlassen die Route! " + distance);
+    }
+}
+
+
     }
 }

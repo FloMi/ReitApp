@@ -153,9 +153,6 @@ public class LocationService extends Service {
         return t;
     }
 
-
-
-
     public class MyLocationListener implements LocationListener
     {
 
@@ -164,6 +161,7 @@ public class LocationService extends Service {
             if(isBetterLocation(loc, previousBestLocation)) {
                 loc.getLatitude();
                 loc.getLongitude();
+                String s = loc.getProvider();
                 //intent.putExtra("Latitude", loc.getLatitude());
                 //intent.putExtra("Longitude", loc.getLongitude());
                 //intent.putExtra("Provider", loc.getProvider());
@@ -172,7 +170,8 @@ public class LocationService extends Service {
 
                 MapActivity.displayMyCurrentLocationOverlay(currentLocation);
                 MapActivity.calcWayToGoal(currentLocation);
-                MapActivity.startRecordingHike(currentLocation);
+                MapActivity.startRecordingHike(currentLocation,s);
+                MapActivity.gotOffCourse(currentLocation);
                 sendBroadcast(intent);
 
             }

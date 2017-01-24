@@ -1,5 +1,6 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 
 public class TourActivity extends AppCompatActivity {
 
+    public final static String EXTRA_MESSAGE = "id";
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     ListView list;
@@ -34,10 +36,19 @@ public class TourActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = list.getItemAtPosition(position);
+                startMap(listItem.toString());
                 Toast.makeText(TourActivity.this, listItem.toString() + " clicked", Toast.LENGTH_SHORT).show();
+
             }
         });
     }
+
+    private void startMap(String s) {
+        Intent intent = new Intent(this, MapActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, s);
+        startActivity(intent);
+    }
+
 
     private void InitTourList() {
         list = (ListView) findViewById(R.id.tourList);
