@@ -106,7 +106,7 @@ public class MapActivity extends Activity {
 
         Intent intent = getIntent();
         message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
-
+        message = (valueOf(message)-1)+"";
         mDatabase = FirebaseDatabase.getInstance().getReference();
         togoal = (TextView) findViewById(R.id.togoal);
         currentInstruction = (TextView) findViewById(R.id.currentInstruction);
