@@ -72,13 +72,6 @@
                 android:textStyle="bold" />
 
             <Button
-                android:text="Map"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/mapButton"
-                android:layout_weight="4.34" />
-
-            <Button
                 android:text="Benutzer erstellen"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

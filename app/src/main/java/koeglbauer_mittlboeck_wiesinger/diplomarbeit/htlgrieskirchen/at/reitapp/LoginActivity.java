@@ -98,6 +98,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         };
 
+        if(mAuth.getCurrentUser()!=null)
+        {
+            Toast.makeText(this, "Eingeloggt", Toast.LENGTH_SHORT).show();
+            onClickOpenMap();
+        }
+
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
@@ -118,14 +124,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public void onClick(View view) {
                 attemptLogin();
-            }
-        });
-
-        Button openMap = (Button) findViewById(R.id.mapButton);
-        openMap.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onClickOpenMap();
             }
         });
 
