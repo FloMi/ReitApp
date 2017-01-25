@@ -44,6 +44,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -69,6 +70,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
     // UI references.
     private AutoCompleteTextView mEmailView;
+    private EditText mEmailConfirmationView;
     private EditText mPasswordView;
     private EditText mPasswordConfirmationView;
     private View mProgressView;
@@ -97,6 +99,8 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
+
+        mEmailConfirmationView = (EditText) findViewById(R.id.emailConfirmation);
 
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -185,11 +189,13 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         // Reset errors.
         mEmailView.setError(null);
+        mEmailConfirmationView.setError(null);
         mPasswordView.setError(null);
         mPasswordConfirmationView.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
+        String emailConfirmation = mEmailConfirmationView.getText().toString();
         String password = mPasswordView.getText().toString();
         String passwordConfirmation = mPasswordConfirmationView.getText().toString();
 
@@ -197,6 +203,13 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
+        if(!email.equals(emailConfirmation))
+        {
+            mEmailConfirmationView.setError(getString(R.string.email_confirmation_error));
+            focusView = mEmailConfirmationView;
+            cancel = true;
+        }
+
         if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
@@ -238,7 +251,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     }
 
     private boolean isPasswordValid(String password) {
-        return password.length() > 2;
+        return password.length() > 6;
     }
 
     /**
@@ -376,6 +389,10 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                     Thread.sleep(1000);
                 if(!registerSucceed)
                     Thread.sleep(1000);
+                if(!registerSucceed)
+                    Thread.sleep(1000);
+                if(!registerSucceed)
+                    Thread.sleep(1000);
             } catch (InterruptedException e) {
                 return false;
             }
@@ -391,7 +408,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 Toast.makeText(RegisterActivity.this, "Benutzer " + mAuth.getCurrentUser().getEmail() + " erstellt und erfolgreich eingeloggt", Toast.LENGTH_LONG).show();
                 onClickOpenMap();
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
+                mPasswordView.setError(getString(R.string.error_new_user));
                 mPasswordView.requestFocus();
             }
         }
@@ -405,7 +422,9 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     }
 
     private void createNewDatabaseUser() {
-        User user = new User(0,0,0,0);
+        List<Integer> list = new ArrayList<>();
+
+        User user = new User(null, 0,0,0,0, mAuth.getCurrentUser().getEmail(), list);
         mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).setValue(user);
     }
 
