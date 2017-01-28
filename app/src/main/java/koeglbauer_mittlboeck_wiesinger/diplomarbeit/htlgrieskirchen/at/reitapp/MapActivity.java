@@ -718,7 +718,7 @@ if (PolylineWaypoints.size()>0)
                 .child(stats).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                int stat = (int) dataSnapshot.getValue();
+                int stat = Integer.parseInt(dataSnapshot.getValue().toString());
                 stat++;
                 database.child("Users").child(user.getUid()).child(stats).setValue(stat);
             }
