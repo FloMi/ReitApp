@@ -47,8 +47,15 @@ import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.Indexable;
 import com.google.firebase.appindexing.builders.Actions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -98,12 +105,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         };
 
-        if(mAuth.getCurrentUser()!=null)
-        {
-            Toast.makeText(this, "Eingeloggt", Toast.LENGTH_SHORT).show();
-            onClickOpenMap();
-        }
-
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
@@ -137,6 +138,45 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        if(mAuth.getCurrentUser()!=null)
+        {
+            checkIfUserIsPermitted();
+        }
+    }
+
+    private void checkIfUserIsPermitted() {
+        showProgress(true);
+        FirebaseDatabase.getInstance().getReference().child("Users")
+                .child(mAuth.getCurrentUser().getUid())
+                .child("status").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Date today = new Date();
+                SimpleDateFormat f = new SimpleDateFormat("dd.MM.yyyy");
+                try {
+                    if(f.parse(dataSnapshot.getValue().toString()).getTime()>today.getTime())
+                    {
+                        showProgress(false);
+                        Toast.makeText(LoginActivity.this, "Eingeloggt", Toast.LENGTH_SHORT).show();
+                        onClickOpenMap();
+                    }
+                    else
+                    {
+                        showProgress(false);
+                        Toast.makeText(LoginActivity.this, "Benutzer abgelaufen", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (ParseException e) {
+                    Toast.makeText(LoginActivity.this, "ERROR - false date in database", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void onClickOpenMap() {
@@ -214,7 +254,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        if (password.isEmpty()) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -380,7 +420,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     });
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 return false;
             }
@@ -393,8 +433,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                Toast.makeText(LoginActivity.this, "Erfolgreich eingeloggt", Toast.LENGTH_SHORT).show();
-                onClickOpenMap();
+                checkIfUserIsPermitted();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();

@@ -91,11 +91,11 @@ public class TourActivity extends AppCompatActivity {
                     }
                     if(hasFinished)
                     {
-                        tourString += " (finished)";
+                        tourString = "☑ " + tourString;
                     }
                     else
                     {
-                        tourString += " (not finished)";
+                        tourString = "☐ " + tourString;
                     }
                     adapter.add(tourString);
                 }

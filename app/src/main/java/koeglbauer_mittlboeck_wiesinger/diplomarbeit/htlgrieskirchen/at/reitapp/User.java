@@ -14,14 +14,14 @@ public class User {
     int kult;
     String email;
     List<Integer> whichTourFinished;
-    Date status;
+    String status;
 
     public User()
     {
 
     }
 
-    public User(Date status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished) {
+    public User(String status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished) {
         this.status = status;
         this.finishedTour = finishedTour;
         this.range = range;
@@ -55,7 +55,7 @@ public class User {
         return whichTourFinished;
     }
 
-    public Date getStatus() {
+    public String getStatus() {
         return status;
     }
 }

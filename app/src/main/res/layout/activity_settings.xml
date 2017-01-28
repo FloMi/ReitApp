@@ -10,4 +10,22 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.SettingsActivity">
 
+    <TextView
+        android:text="Benutzer läuft ab am: "
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:id="@+id/userExpireTextView"
+        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBarExpireDate"
+        android:layout_alignBottom="@+id/userExpireTextView"
+        android:layout_toEndOf="@+id/userExpireTextView"
+        android:layout_alignParentTop="true"
+        android:visibility="gone"/>
 </RelativeLayout>
