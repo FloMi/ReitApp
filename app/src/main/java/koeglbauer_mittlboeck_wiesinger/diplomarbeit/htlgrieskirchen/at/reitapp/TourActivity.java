@@ -47,7 +47,6 @@ public class TourActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = list.getItemAtPosition(position);
                 startMap(listItem.toString());
-                Toast.makeText(TourActivity.this, listItem.toString() + " clicked", Toast.LENGTH_SHORT).show();
             }
         });
     }

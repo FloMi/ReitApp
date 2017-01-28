@@ -31,6 +31,8 @@ import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -705,5 +707,35 @@ if (PolylineWaypoints.size()>0)
 }
 
 
+    }
+
+    public void addStatistic(final String stats)
+    {
+        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        database.child("Users")
+                .child(user.getUid())
+                .child(stats).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                int stat = (int) dataSnapshot.getValue();
+                stat++;
+                database.child("Users").child(user.getUid()).child(stats).setValue(stat);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(MapActivity.this, "Fehler beim Übertragen einer Statistik", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    public void addFinishedTour(final int id)
+    {
+        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        database.child("Users")
+                .child(user.getUid())
+                .child("whichTourFinished")
+                .push().setValue(id);
     }
 }
