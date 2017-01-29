@@ -97,7 +97,7 @@ public class MapActivity extends Activity {
     LocationManager locationManager;
     Polyline response;
     List<Marker> InstructionMarkerList = new ArrayList<>();
-    List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
+    static List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
     private String message = "0";
 
     @Override
@@ -107,8 +107,7 @@ public class MapActivity extends Activity {
         setContentView(R.layout.activity_map);
 
         Intent intent = getIntent();
-        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
-        //message = (valueOf(message)-1)+"";
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
         togoal = (TextView) findViewById(R.id.togoal);
         currentInstruction = (TextView) findViewById(R.id.currentInstruction);
@@ -133,6 +132,15 @@ public class MapActivity extends Activity {
             }
         });
 
+        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        if(message != null) {
+
+            message = (valueOf(message.substring(0,1)) - 1) + "";
+            startNav.setVisibility(View.VISIBLE);
+        }
+        else startNav.setVisibility(View.INVISIBLE);
+
+
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
         SetMap();
@@ -147,7 +155,7 @@ public class MapActivity extends Activity {
     }
 
     private void InitTourList() {
-
+DatabaseCoordinates.clear();
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -170,6 +178,7 @@ public class MapActivity extends Activity {
                         }
                     }
                 }
+                drawPath();
             }
 
             @Override
@@ -177,7 +186,7 @@ public class MapActivity extends Activity {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
             }
         });
-        drawPath();
+
     }
 
     public static void displayMyCurrentLocationOverlay(GeoPoint Location) {
@@ -188,6 +197,11 @@ public class MapActivity extends Activity {
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
         map.getOverlays().add(currentLocationMarker);
+
+        if(navigationStartet)
+        {
+            crateInstructions();
+        }
     }
 
     public static void calcWayToGoal(GeoPoint currentLocation) {
@@ -254,7 +268,7 @@ public class MapActivity extends Activity {
             }
 
             Polyline l = new Polyline();
-            l.setColor(Color.argb(255, 255, 0, 0));
+            l.setColor(Color.argb(255, 138, 152, 31));
             l.setWidth(20);
 
             l.setPoints(MovedDistance);
@@ -321,7 +335,6 @@ public class MapActivity extends Activity {
 
     private void startNavigation() {
                 InitTourList();
-
                 navigationStartet = true;
     }
 
@@ -370,14 +383,14 @@ public class MapActivity extends Activity {
     private void drawPath() {
 
                 Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 200, 255));
+                line.setColor(Color.argb(255, 138, 152, 31));
                 line.setWidth(20);
 
                 line.setPoints(DatabaseCoordinates);
 
                 map.getOverlays().remove(line);
                 map.getOverlays().add(line);
-                //crateInstructions();
+                crateInstructions();
                 map.invalidate();
 
 
@@ -556,48 +569,14 @@ public class MapActivity extends Activity {
         return PolylineWaypoints;
     }
 
-    private void crateInstructions() {
-        if (InstructionMarkerList != null) {
-            for (Marker i : InstructionMarkerList) {
-                map.getOverlays().remove(i);
-            }
-        }
-        InstructionMarkerList.clear();
-        for (int i = 0; i < instructionList.size(); i++) {
-            Marker m = new Marker(map);
-            InstructionMarkerList.add(m);
-            m.setIcon(getResources().getDrawable(R.drawable.marker));
-            GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0), instructionList.get(i).getPoints().getLongitude(0));
-            double a = instructionList.get(i).getDistance();
-            m.setPosition(g);
+    private static void crateInstructions() {
 
-            Translation translation = new Translation() {
-                @Override
-                public String tr(String key, Object... params) {
-                    return null;
-                }
-
-                @Override
-                public Map<String, String> asMap() {
-                    return null;
-                }
-
-                @Override
-                public Locale getLocale() {
-                    return null;
-                }
-
-                @Override
-                public String getLanguage() {
-                    return null;
-                }
-            };
-
-            m.setTitle(instructionList.get(i).getTurnDescription(translation));
-            m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        }
-        for (Marker i : InstructionMarkerList) {
-            map.getOverlays().add(i);
+        if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>20)
+        {
+            currentInstruction.setVisibility(View.VISIBLE);
+            float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
+            String toStart = String.format("%.2f", distance);
+            currentInstruction.setText("Begeben sie sich zum Start, entfernung: "+toStart);
         }
 
     }

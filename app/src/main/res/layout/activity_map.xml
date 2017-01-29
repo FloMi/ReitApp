@@ -28,6 +28,7 @@
             android:layout_alignParentBottom="true"
             android:id="@+id/startrout"
             android:layout_width="match_parent"
+            android:visibility="gone"
             android:layout_height="350px"
             android:text="Start Navigation"/>
 
@@ -37,13 +38,13 @@
             android:layout_height="70px"
             android:text=""
             android:layout_above="@id/startrout"/>
-
         <TextView
             android:id="@+id/currentInstruction"
             android:layout_width="2000px"
             android:layout_height="70px"
             android:text=""
-            android:layout_above="@id/togoal"/>
+            android:visibility="invisible"
+            android:layout_above="@id/startrout"/>
 
     </RelativeLayout>
 </RelativeLayout>
