@@ -20,7 +20,6 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,7 +45,6 @@ import com.graphhopper.api.GraphHopperWeb;
 import com.graphhopper.util.InstructionList;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.StopWatch;
-import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
 
@@ -66,8 +64,6 @@ import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -90,7 +86,7 @@ public class MapActivity extends Activity {
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
     private GHPoint startingPoint;
     private GoogleApiClient client;
-    private static boolean navigationStartet = false;
+    private static boolean navigationStarted = false;
     private DatabaseReference mDatabase;
     ArrayList<OverlayItem> overlayItemArray;
     LocationService mLocationService;
@@ -125,17 +121,32 @@ public class MapActivity extends Activity {
                 stopService(new Intent(MapActivity.this, LocationService.class));
             }
         });
-        Button startNav = (Button) findViewById(R.id.startrout);
+
+
+        final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
                 startNavigation();
+
+                if(navigationStarted)
+                {
+                    startNav.setImageResource(R.drawable.ic_stopnav);
+
+                }
+                else
+                {
+                    startNav.setImageResource(R.drawable.ic_navigation_arrow);
+                }
+
+
             }
         });
 
         message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
         if(message != null) {
 
-            message = (valueOf(message.substring(0,1)) - 1) + "";
+            message = (valueOf(message.substring(2,3)) - 1) + "";
             startNav.setVisibility(View.VISIBLE);
         }
         else startNav.setVisibility(View.INVISIBLE);
@@ -144,6 +155,9 @@ public class MapActivity extends Activity {
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
         SetMap();
+
+
+        map.setBuiltInZoomControls(false);
 
         Intent i = new Intent(this, LocationService.class);
         startService(i);
@@ -197,8 +211,8 @@ DatabaseCoordinates.clear();
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
         map.getOverlays().add(currentLocationMarker);
-
-        if(navigationStartet)
+        mMapController.animateTo(Location);
+        if(navigationStarted && DatabaseCoordinates.size()>0)
         {
             crateInstructions();
         }
@@ -206,7 +220,7 @@ DatabaseCoordinates.clear();
 
     public static void calcWayToGoal(GeoPoint currentLocation) {
 
-        //if (!navigationStartet) return;
+        //if (!navigationStarted) return;
 
         DistanceToGoal = 0.0;
 
@@ -243,7 +257,7 @@ DatabaseCoordinates.clear();
 
 
 
-        if (navigationStartet)
+        if (navigationStarted)
         {
             if (s.equals("gps"))
             {
@@ -256,7 +270,7 @@ DatabaseCoordinates.clear();
                 {
                     float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size()-1));
 
-                    if (d>(float)3)
+                    if (d>(float)5)
                     {
 
                         movedForward(cl);
@@ -278,12 +292,13 @@ DatabaseCoordinates.clear();
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
         }
+        else
+        {
+            MovedDistance.clear();
+        }
     }
 
     private static void movedForward(GeoPoint cl) {
-
-
-
 
 
     }
@@ -335,7 +350,17 @@ DatabaseCoordinates.clear();
 
     private void startNavigation() {
                 InitTourList();
-                navigationStartet = true;
+
+                if (navigationStarted)
+                {
+                    navigationStarted=false;
+                }
+                else
+                {
+                    navigationStarted = true;
+                }
+
+
     }
 
     private void openUserActivity() {
