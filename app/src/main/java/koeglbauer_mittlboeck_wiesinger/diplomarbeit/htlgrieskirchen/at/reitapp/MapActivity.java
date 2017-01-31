@@ -20,7 +20,6 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,7 +45,6 @@ import com.graphhopper.api.GraphHopperWeb;
 import com.graphhopper.util.InstructionList;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.StopWatch;
-import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
 
@@ -66,8 +64,6 @@ import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -90,14 +86,14 @@ public class MapActivity extends Activity {
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
     private GHPoint startingPoint;
     private GoogleApiClient client;
-    private static boolean navigationStartet = false;
+    private static boolean navigationStarted = false;
     private DatabaseReference mDatabase;
     ArrayList<OverlayItem> overlayItemArray;
     LocationService mLocationService;
     LocationManager locationManager;
     Polyline response;
     List<Marker> InstructionMarkerList = new ArrayList<>();
-    List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
+    static List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
     private String message = "0";
 
     @Override
@@ -107,8 +103,7 @@ public class MapActivity extends Activity {
         setContentView(R.layout.activity_map);
 
         Intent intent = getIntent();
-        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
-        //message = (valueOf(message)-1)+"";
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
         togoal = (TextView) findViewById(R.id.togoal);
         currentInstruction = (TextView) findViewById(R.id.currentInstruction);
@@ -126,16 +121,43 @@ public class MapActivity extends Activity {
                 stopService(new Intent(MapActivity.this, LocationService.class));
             }
         });
-        Button startNav = (Button) findViewById(R.id.startrout);
+
+
+        final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
                 startNavigation();
+
+                if(navigationStarted)
+                {
+                    startNav.setImageResource(R.drawable.ic_stopnav);
+
+                }
+                else
+                {
+                    startNav.setImageResource(R.drawable.ic_navigation_arrow);
+                }
+
+
             }
         });
+
+        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        if(message != null) {
+
+            message = (valueOf(message.substring(2,3)) - 1) + "";
+            startNav.setVisibility(View.VISIBLE);
+        }
+        else startNav.setVisibility(View.INVISIBLE);
+
 
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
         SetMap();
+
+
+        map.setBuiltInZoomControls(false);
 
         Intent i = new Intent(this, LocationService.class);
         startService(i);
@@ -147,7 +169,7 @@ public class MapActivity extends Activity {
     }
 
     private void InitTourList() {
-
+DatabaseCoordinates.clear();
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -170,6 +192,7 @@ public class MapActivity extends Activity {
                         }
                     }
                 }
+                drawPath();
             }
 
             @Override
@@ -177,7 +200,7 @@ public class MapActivity extends Activity {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
             }
         });
-        drawPath();
+
     }
 
     public static void displayMyCurrentLocationOverlay(GeoPoint Location) {
@@ -188,11 +211,16 @@ public class MapActivity extends Activity {
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
         map.getOverlays().add(currentLocationMarker);
+        mMapController.animateTo(Location);
+        if(navigationStarted && DatabaseCoordinates.size()>0)
+        {
+            crateInstructions();
+        }
     }
 
     public static void calcWayToGoal(GeoPoint currentLocation) {
 
-        //if (!navigationStartet) return;
+        //if (!navigationStarted) return;
 
         DistanceToGoal = 0.0;
 
@@ -229,7 +257,7 @@ public class MapActivity extends Activity {
 
 
 
-        if (navigationStartet)
+        if (navigationStarted)
         {
             if (s.equals("gps"))
             {
@@ -242,7 +270,7 @@ public class MapActivity extends Activity {
                 {
                     float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size()-1));
 
-                    if (d>(float)3)
+                    if (d>(float)5)
                     {
 
                         movedForward(cl);
@@ -254,7 +282,7 @@ public class MapActivity extends Activity {
             }
 
             Polyline l = new Polyline();
-            l.setColor(Color.argb(255, 255, 0, 0));
+            l.setColor(Color.argb(255, 138, 152, 31));
             l.setWidth(20);
 
             l.setPoints(MovedDistance);
@@ -264,12 +292,13 @@ public class MapActivity extends Activity {
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
         }
+        else
+        {
+            MovedDistance.clear();
+        }
     }
 
     private static void movedForward(GeoPoint cl) {
-
-
-
 
 
     }
@@ -322,7 +351,16 @@ public class MapActivity extends Activity {
     private void startNavigation() {
                 InitTourList();
 
-                navigationStartet = true;
+                if (navigationStarted)
+                {
+                    navigationStarted=false;
+                }
+                else
+                {
+                    navigationStarted = true;
+                }
+
+
     }
 
     private void openUserActivity() {
@@ -370,14 +408,14 @@ public class MapActivity extends Activity {
     private void drawPath() {
 
                 Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 200, 255));
+                line.setColor(Color.argb(255, 138, 152, 31));
                 line.setWidth(20);
 
                 line.setPoints(DatabaseCoordinates);
 
                 map.getOverlays().remove(line);
                 map.getOverlays().add(line);
-                //crateInstructions();
+                crateInstructions();
                 map.invalidate();
 
 
@@ -556,48 +594,14 @@ public class MapActivity extends Activity {
         return PolylineWaypoints;
     }
 
-    private void crateInstructions() {
-        if (InstructionMarkerList != null) {
-            for (Marker i : InstructionMarkerList) {
-                map.getOverlays().remove(i);
-            }
-        }
-        InstructionMarkerList.clear();
-        for (int i = 0; i < instructionList.size(); i++) {
-            Marker m = new Marker(map);
-            InstructionMarkerList.add(m);
-            m.setIcon(getResources().getDrawable(R.drawable.marker));
-            GeoPoint g = new GeoPoint(instructionList.get(i).getPoints().getLatitude(0), instructionList.get(i).getPoints().getLongitude(0));
-            double a = instructionList.get(i).getDistance();
-            m.setPosition(g);
+    private static void crateInstructions() {
 
-            Translation translation = new Translation() {
-                @Override
-                public String tr(String key, Object... params) {
-                    return null;
-                }
-
-                @Override
-                public Map<String, String> asMap() {
-                    return null;
-                }
-
-                @Override
-                public Locale getLocale() {
-                    return null;
-                }
-
-                @Override
-                public String getLanguage() {
-                    return null;
-                }
-            };
-
-            m.setTitle(instructionList.get(i).getTurnDescription(translation));
-            m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        }
-        for (Marker i : InstructionMarkerList) {
-            map.getOverlays().add(i);
+        if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>20)
+        {
+            currentInstruction.setVisibility(View.VISIBLE);
+            float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
+            String toStart = String.format("%.2f", distance);
+            currentInstruction.setText("Begeben sie sich zum Start, entfernung: "+toStart);
         }
 
     }
