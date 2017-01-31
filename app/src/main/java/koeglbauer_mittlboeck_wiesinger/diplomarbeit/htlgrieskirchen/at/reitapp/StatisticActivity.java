@@ -56,7 +56,7 @@ public class StatisticActivity extends AppCompatActivity {
                     switch (postSnapshot.getKey())
                     {
                         case "finishedTour":touren.setText(postSnapshot.getValue().toString());break;
-                        case "range":kilom.setText(postSnapshot.getValue().toString());break;
+                        case "range":kilom.setText(postSnapshot.getValue().toString()+" km");break;
                         case "gast":gast.setText(postSnapshot.getValue().toString());break;
                         case "kult":kult.setText(postSnapshot.getValue().toString());break;
                     }

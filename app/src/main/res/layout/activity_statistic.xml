@@ -56,12 +56,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/textViewKilo"
-                android:text="Kilometer: "
+                android:text="Zurückgelegte Strecke: "
                 android:layout_gravity="right"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
 
             <TextView
-                android:text="0"
+                android:text="0 km"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/textViewStats2"

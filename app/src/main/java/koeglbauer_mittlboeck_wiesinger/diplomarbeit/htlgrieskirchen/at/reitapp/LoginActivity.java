@@ -4,8 +4,11 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.nfc.Tag;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -138,6 +141,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        
+        if(!isNetworkAvailable())
+            Toast.makeText(this, "Überprüfen Sie Ihre Internet Verbindung!", Toast.LENGTH_LONG).show();
 
         if(mAuth.getCurrentUser()!=null)
         {
@@ -462,6 +468,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }
 
