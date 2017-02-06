@@ -9,17 +9,20 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
+import android.text.InputType;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,36 +41,34 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.graphhopper.util.PointList;
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
 import com.graphhopper.PathWrapper;
-import com.graphhopper.api.GraphHopperWeb;
-import com.graphhopper.util.InstructionList;
-import com.graphhopper.util.Parameters;
-import com.graphhopper.util.StopWatch;
-import com.graphhopper.util.shapes.GHPoint;
 
 
+import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
 
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import okhttp3.OkHttpClient;
-
+import static android.R.id.content;
 import static java.lang.Integer.valueOf;
 
 public class MapActivity extends Activity {
@@ -79,22 +80,28 @@ public class MapActivity extends Activity {
     static TextView currentInstruction;
     static private Double DistanceToGoal = 0.0;
     static Marker currentLocationMarker;
-    static private InstructionList instructionList;
+
     static Polyline CoverdTrack;
     private static MapView map;
     private static MapController mMapController;
     private static final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
-    private GHPoint startingPoint;
     private GoogleApiClient client;
+
     private static boolean navigationStarted = false;
+    private static boolean recordingStarted = false;
+
     private DatabaseReference mDatabase;
-    ArrayList<OverlayItem> overlayItemArray;
-    LocationService mLocationService;
-    LocationManager locationManager;
+
     Polyline response;
-    List<Marker> InstructionMarkerList = new ArrayList<>();
+
     static List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
-    private String message = "0";
+    private String routID = "0";
+    private String routName = "nan";
+
+    Polyline mainPolyline = new Polyline();
+
+     FloatingActionButton startRecord;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -113,6 +120,24 @@ public class MapActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
+        startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
+
+        startRecord.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                if(recordingStarted)
+                {
+                    exportToKml();
+                }
+                else
+                {
+                    recordingStarted = true;
+                    startRecord.setImageResource(R.drawable.ic_save);
+                }
+            }
+
+
+        });
 
         FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
         myFab.setOnClickListener(new View.OnClickListener() {
@@ -127,26 +152,38 @@ public class MapActivity extends Activity {
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                startNavigation();
-
                 if(navigationStarted)
                 {
-                    startNav.setImageResource(R.drawable.ic_stopnav);
+                    startNav.setImageResource(R.drawable.ic_navigation_arrow);
+                    navigationStarted=false;
 
+                    togoal.setText("");
+                    currentInstruction.setText("");
+
+                    clearMap();
+
+                    map.invalidate();
                 }
                 else
                 {
-                    startNav.setImageResource(R.drawable.ic_navigation_arrow);
+                    startNavigation();
+                    startNav.setImageResource(R.drawable.ic_stopnav);
+                    navigationStarted=true;
+
                 }
 
 
             }
         });
 
-        message = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
-        if(message != null) {
+        routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        if(routID != null) {
 
-            message = (valueOf(message.substring(2,3)) - 1) + "";
+            String[] s = routID.split(";");
+
+            routID = (valueOf(s[0]) - 1) + "";
+            routName = s[1].split(":")[1];
+
             startNav.setVisibility(View.VISIBLE);
         }
         else startNav.setVisibility(View.INVISIBLE);
@@ -168,8 +205,85 @@ public class MapActivity extends Activity {
         currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.point));
     }
 
+
+    private void exportToKml() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Title");
+
+        // Set up the input
+        final EditText input = new EditText(this);
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                StringBuilder str = new StringBuilder();
+                File file;
+                String s = input.getText().toString();
+                String coordinatesString ="";
+                Calendar c = Calendar.getInstance();
+                SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+                String formattedDate = df.format(c.getTime());
+
+
+                KmlDocument kmlDocument = new KmlDocument();
+
+                kmlDocument.mKmlRoot.addOverlay(CoverdTrack,kmlDocument);
+
+
+                String root = Environment.getExternalStorageDirectory().toString();
+                File myDir = new File(root + "/saved_routs");
+                myDir.mkdirs();
+
+                file = new File(myDir, s+".kml");
+
+                kmlDocument.saveAsKML(file);
+                recordingStarted = false;
+
+                startRecord.setImageResource(R.drawable.ic_action_name);
+
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+                recordingStarted = true;
+                startRecord.setImageResource(R.drawable.ic_save);
+            }
+        });
+
+        builder.show();
+
+
+    }
+
+    private void writeToFile(String  filename,String data) {
+        File file;
+        FileOutputStream outputStream;
+        try {
+            String root = Environment.getExternalStorageDirectory().toString();
+            File myDir = new File(root + "/saved_routs");
+            myDir.mkdirs();
+
+            file = new File(myDir, filename+".kml");
+
+            outputStream = new FileOutputStream(file);
+            outputStream.write(data.toString().getBytes());
+            outputStream.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void InitTourList() {
-DatabaseCoordinates.clear();
+        DatabaseCoordinates.clear();
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -177,7 +291,7 @@ DatabaseCoordinates.clear();
                 for(DataSnapshot postSnapshot: dataSnapshot.getChildren())
                 {
                     tourString=valueOf(postSnapshot.getKey());
-                    String[] parts = message.split(":");
+                    String[] parts = routID.split(":");
                     if(tourString == valueOf(parts[0]))
                     {
                         postSnapshot.child("Coordinates").getChildren();
@@ -253,9 +367,35 @@ DatabaseCoordinates.clear();
         }
     }
 
+    public void checkIfTourFinished()
+    {
+        if(Math.abs(calcDistanceOfRout(MovedDistance) -    calcDistanceOfRout(DatabaseCoordinates)) < 50)
+        {
+                
+        }
+    }
+
+    private float calcDistanceOfRout(List<GeoPoint> rout) {
+
+        float distanceInMeters = 0;
+
+        for ( int i = 0;i<= rout.size()-1;i++){
+
+            Location loc1 = new Location("");
+            loc1.setLatitude(rout.get(i).getLatitude());
+            loc1.setLongitude(rout.get(i).getLongitude());
+
+            Location loc2 = new Location("");
+            loc2.setLatitude(rout.get(i+1).getLatitude());
+            loc2.setLongitude(rout.get(i+1).getLongitude());
+
+            distanceInMeters =+ loc1.distanceTo(loc2);
+        }
+
+        return distanceInMeters;
+    }
+
     public static void startRecordingHike(GeoPoint cl, String s) {
-
-
 
         if (navigationStarted)
         {
@@ -275,7 +415,6 @@ DatabaseCoordinates.clear();
 
                         movedForward(cl);
                         //mMapController.animateTo(currentLocation);
-
                         MovedDistance.add(currentLocation);
                     }
                 }
@@ -292,7 +431,45 @@ DatabaseCoordinates.clear();
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
         }
-        else
+        else if (recordingStarted == false)
+        {
+            MovedDistance.clear();
+        }
+
+        if (recordingStarted)
+        {
+            if (s.equals("gps"))
+            {
+                if (MovedDistance.size() == 0)
+                {
+                    //mMapController.animateTo(currentLocation);
+                    MovedDistance.add(currentLocation);
+                }
+                else
+                {
+                    float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size()-1));
+
+                    if (d>(float)1)
+                    {
+                        movedForward(cl);
+                        //mMapController.animateTo(currentLocation);
+                        MovedDistance.add(currentLocation);
+                    }
+                }
+            }
+
+            Polyline l = new Polyline();
+            l.setColor(Color.argb(255, 138, 152, 31));
+            l.setWidth(20);
+
+            l.setPoints(MovedDistance);
+
+            map.getOverlays().remove(l);
+            CoverdTrack = l;
+            map.getOverlays().add(CoverdTrack);
+            map.invalidate();
+        }
+        else if (navigationStarted == false)
         {
             MovedDistance.clear();
         }
@@ -349,18 +526,17 @@ DatabaseCoordinates.clear();
     }
 
     private void startNavigation() {
-                InitTourList();
 
-                if (navigationStarted)
-                {
-                    navigationStarted=false;
-                }
-                else
-                {
-                    navigationStarted = true;
-                }
+        InitTourList();
 
-
+         if (navigationStarted)
+         {
+            navigationStarted=false;
+         }
+         else
+         {
+            navigationStarted = true;
+         }
     }
 
     private void openUserActivity() {
@@ -407,165 +583,24 @@ DatabaseCoordinates.clear();
 
     private void drawPath() {
 
-                Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 138, 152, 31));
-                line.setWidth(20);
+                mainPolyline.setColor(Color.argb(255, 138, 152, 31));
+                mainPolyline.setWidth(20);
 
-                line.setPoints(DatabaseCoordinates);
+                mainPolyline.setPoints(DatabaseCoordinates);
 
-                map.getOverlays().remove(line);
-                map.getOverlays().add(line);
+                clearMap();
+
+                map.getOverlays().add(mainPolyline);
                 crateInstructions();
                 map.invalidate();
-
-
     }
 
-    private void SetGraphhopperActualPosition() {
+    private void clearMap() {
 
-        new AsyncTask<Void, Void, Polyline>() {
-            float time;
+        map.getOverlays().remove(mainPolyline);
 
-
-            @Override
-            protected void onPreExecute() {
-
-                if (!isNetworkAvailable()) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-
-                    builder.setTitle("Kein Internet");
-
-                    builder.setMessage("Stellen sie eine einternet verbindung her");
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            return;
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            return;
-                        }
-                    });
-                    builder.show();
-
-                    this.cancel(true);
-                }
-
-                super.onPreExecute();
-
-            }
-
-            protected Polyline doInBackground(Void... v) {
-
-                if (this.isCancelled()) {
-                    return null;
-                }
-
-                StopWatch sw = new StopWatch().start();
-
-                List<GHPoint> points;
-                points = new ArrayList<GHPoint>(6);
-
-                GHPoint b = new GHPoint(48.092896, 13.565618);
-                GHPoint s = new GHPoint(b.getLat(), b.getLon());
-                startingPoint = s;
-                GHPoint e = new GHPoint(48.090331, 13.571295);
-                GHPoint f = new GHPoint(48.093433, 13.571091);
-                GHPoint g = new GHPoint(48.092896, 13.565618);
-
-
-                points.add(b);
-                points.add(e);
-                points.add(f);
-                points.add(g);
-
-                GHRequest req = new GHRequest(getRoutToClosestPointFromPosition(points)).
-                        setAlgorithm(Parameters.Algorithms.DIJKSTRA_BI);
-                req.getHints().
-                        put(Parameters.Routing.INSTRUCTIONS, "true");
-                GraphHopperWeb gh = new GraphHopperWeb();
-                gh.setKey("32565c22-5144-4700-b089-a78f30b6044a");
-                gh.setDownloader(new OkHttpClient.Builder().
-                        connectTimeout(5, TimeUnit.SECONDS).
-                        readTimeout(5, TimeUnit.SECONDS).build());
-                GHResponse resp = gh.route(req);
-                time = sw.stop().getSeconds();
-
-                instructionList = resp.getBest().getInstructions();
-
-                DistanceToGoal = resp.getBest().getDistance();
-
-                crateInstructions();
-                Polyline line = new Polyline();
-                line.setColor(Color.argb(255, 0, 140, 255));
-                line.setWidth(20);
-
-                line.setPoints(createPolyline(resp.getBest()));
-
-                return line;
-            }
-
-            protected void onPostExecute(Polyline resp) {
-
-                map.getOverlays().remove(response);
-                response = resp;
-                map.getOverlays().add(response);
-                crateInstructions();
-
-                map.invalidate();
-
-            }
-        }.execute();
     }
-
-    private List<GHPoint> getRoutToClosestPointFromPosition(List<GHPoint> points) {
-
-        GHPoint nextpoint = points.get(0);
-        float smalestDistance = 10000000;
-
-        for (GHPoint i : points) {
-
-            Location locationList = new Location("point List");
-
-            locationList.setLatitude(i.getLat());
-            locationList.setLongitude(i.getLon());
-
-            Location locationCurrent = new Location("point currentlocatio");
-
-            locationCurrent.setLatitude(currentLocation.getLatitude());
-            locationCurrent.setLongitude(currentLocation.getLongitude());
-
-            float distance = locationList.distanceTo(locationCurrent);
-
-            if (distance < smalestDistance) {
-                smalestDistance = distance;
-                nextpoint = i;
-            }
-        }
-
-        for (int l = 0; l <= points.indexOf(nextpoint) - 1; l++) {
-            points.remove(l);
-        }
-
-        GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-        points.add(0, currentGHPoint);
-
-        return points;
-    }
-
-    private List<GHPoint> getRoutToStartPointFromPosition(List<GHPoint> points) {
-
-        GHPoint currentGHPoint = new GHPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-        points.add(0, currentGHPoint);
-
-        return points;
-    }
-
     private void SetMap() {
-
 
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
