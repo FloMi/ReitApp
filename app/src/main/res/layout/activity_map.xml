@@ -65,9 +65,11 @@
 
 
    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="80pt"
-        android:layout_alignParentBottom="true">
+
+       android:layout_width="match_parent"
+        android:layout_height="40pt"
+        android:layout_alignParentBottom="true"
+       android:background="@drawable/border">
        <!---
                 <Button
                     android:layout_alignParentBottom="true"
@@ -103,14 +105,36 @@
                      android:text=""
                      android:layout_alignParentBottom="true"
                      android:layout_alignParentRight="true"/>
-                 <TextView
-                     android:id="@+id/currentInstruction"
-                     android:layout_width="2000px"
-                     android:layout_height="70px"
-                     android:text=""
-                     android:visibility="invisible"
-                     android:layout_alignParentBottom="true"
-                     android:layout_alignParentLeft="true"/>
+
+
+
+
+       <TextView
+           android:id="@+id/currentInstruction"
+           android:layout_width="2000px"
+           android:layout_height="90px"
+           android:text=""
+           android:visibility="invisible"
+           android:layout_alignParentBottom="true"
+           android:gravity="center"
+           android:includeFontPadding="false"
+           android:layout_marginBottom="160px"
+           android:layout_marginLeft="190px"
+           style="@style/QText"/>
+
+
+
+       <TextView
+       android:id="@+id/timer"
+       android:layout_width="2000px"
+       android:layout_height="90px"
+       android:text=""
+       android:layout_alignParentBottom="true"
+       android:gravity="center"
+       android:includeFontPadding="false"
+       android:layout_marginBottom="60px"
+       android:layout_marginLeft="190px"
+       style="@style/QText"/>
 
              </RelativeLayout>
  </RelativeLayout>

@@ -15,24 +15,21 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.text.InputType;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
-
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -40,9 +37,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.graphhopper.util.PointList;
 import com.graphhopper.PathWrapper;
-
+import com.graphhopper.util.PointList;
 
 import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
@@ -51,14 +47,11 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
-
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -68,10 +61,20 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import static android.R.id.content;
 import static java.lang.Integer.valueOf;
 
 public class MapActivity extends Activity {
+
+    //Timer
+    private TextView tempTextView; //Temporary TextView
+    private Button tempBtn; //Temporary Button
+    private Handler mHandler = new Handler();
+    private long startTime;
+    private long elapsedTime;
+    private final int REFRESH_RATE = 100;
+    private String hours,minutes,seconds,milliseconds;
+    private long secs,mins,hrs;
+    private boolean stopped = false;
 
     static GeoPoint currentLocation;
     static List<GeoPoint> MovedDistance = new ArrayList<>();
@@ -161,6 +164,8 @@ public class MapActivity extends Activity {
                     currentInstruction.setText("");
 
                     clearMap();
+                    resetClick ();
+                    stopClick ();
 
                     map.invalidate();
                 }
@@ -168,6 +173,9 @@ public class MapActivity extends Activity {
                 {
                     startNavigation();
                     startNav.setImageResource(R.drawable.ic_stopnav);
+
+                    startClick();
+
                     navigationStarted=true;
 
                 }
@@ -181,10 +189,12 @@ public class MapActivity extends Activity {
 
             String[] s = routID.split(";");
 
-            routID = (valueOf(s[0]) - 1) + "";
+            routID = (valueOf(s[0])) + "";
             routName = s[1].split(":")[1];
 
             startNav.setVisibility(View.VISIBLE);
+
+
         }
         else startNav.setVisibility(View.INVISIBLE);
 
@@ -206,6 +216,8 @@ public class MapActivity extends Activity {
     }
 
 
+
+
     private void exportToKml() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -214,7 +226,7 @@ public class MapActivity extends Activity {
         // Set up the input
         final EditText input = new EditText(this);
         // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
         // Set up the buttons
@@ -318,6 +330,20 @@ public class MapActivity extends Activity {
     }
 
     public static void displayMyCurrentLocationOverlay(GeoPoint Location) {
+
+        //if(currentLocation != null)
+        //{
+        //    if(checkIfNextPositionIsValid(Location))
+        //    {
+        //        currentLocation = Location;
+        //    }
+        //}
+        //else
+        //{
+        //    currentLocation = Location;
+        //}
+
+
         currentLocation = Location;
         map.getOverlays().remove(currentLocationMarker);
         currentLocationMarker.setPosition(currentLocation);
@@ -330,6 +356,14 @@ public class MapActivity extends Activity {
         {
             crateInstructions();
         }
+    }
+
+    private static boolean checkIfNextPositionIsValid(GeoPoint location) {
+
+        if (calcDistanceFromTo(location,currentLocation)<50) {
+            return true;
+        }
+        return false;
     }
 
     public static void calcWayToGoal(GeoPoint currentLocation) {
@@ -367,11 +401,43 @@ public class MapActivity extends Activity {
         }
     }
 
+
+    public static float calcDistanceFromTo(GeoPoint locFrom, GeoPoint locTo) {
+
+
+                Location actualLocation = new Location("actualLocation");
+
+                actualLocation.setLatitude(locFrom.getLatitude());
+                actualLocation.setLongitude(locFrom.getLongitude());
+
+                Location nextLoaction = new Location("nextLoaction");
+
+                nextLoaction.setLatitude(locTo.getLatitude());
+                nextLoaction.setLongitude(locTo.getLongitude());
+
+                return(actualLocation.distanceTo(nextLoaction));
+            }
+
+
     public void checkIfTourFinished()
     {
-        if(Math.abs(calcDistanceOfRout(MovedDistance) -    calcDistanceOfRout(DatabaseCoordinates)) < 50)
+        if (navigationStarted)
         {
-                
+            if(Math.abs(calcDistanceOfRout(MovedDistance) - calcDistanceOfRout(DatabaseCoordinates)) < 50 )
+            {
+                Location loc1 = new Location("");
+                loc1.setLatitude(DatabaseCoordinates.get(DatabaseCoordinates.size()).getLatitude());
+                loc1.setLongitude(DatabaseCoordinates.get(DatabaseCoordinates.size()).getLongitude());
+
+                Location loc2 = new Location("");
+                loc2.setLatitude(currentLocation.getLatitude());
+                loc2.setLongitude(currentLocation.getLongitude());
+
+                if (loc1.distanceTo(loc2) <= 15)
+                {
+
+                }
+            }
         }
     }
 
@@ -413,7 +479,6 @@ public class MapActivity extends Activity {
                     if (d>(float)5)
                     {
 
-                        movedForward(cl);
                         //mMapController.animateTo(currentLocation);
                         MovedDistance.add(currentLocation);
                     }
@@ -451,7 +516,6 @@ public class MapActivity extends Activity {
 
                     if (d>(float)1)
                     {
-                        movedForward(cl);
                         //mMapController.animateTo(currentLocation);
                         MovedDistance.add(currentLocation);
                     }
@@ -473,11 +537,6 @@ public class MapActivity extends Activity {
         {
             MovedDistance.clear();
         }
-    }
-
-    private static void movedForward(GeoPoint cl) {
-
-
     }
 
     private static String GetDistanceString(Double distance) {
@@ -540,45 +599,9 @@ public class MapActivity extends Activity {
     }
 
     private void openUserActivity() {
+        navigationStarted = false;
         Intent intent = new Intent(this, MainMenuActivity.class);
         startActivity(intent);
-    }
-
-    private void setMobileDataEnabled(Context context, boolean enabled) {
-        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        final Class conmanClass;
-        try {
-            conmanClass = Class.forName(conman.getClass().getName());
-            final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
-            iConnectivityManagerField.setAccessible(true);
-            final Object iConnectivityManager = iConnectivityManagerField.get(conman);
-            final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
-
-            final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-
-            setMobileDataEnabledMethod.setAccessible(true);
-
-            setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
-    public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private void drawPath() {
@@ -613,32 +636,17 @@ public class MapActivity extends Activity {
         mMapController.setCenter(s);
     }
 
-    private ArrayList<GeoPoint> createPolyline(PathWrapper response) {
-
-        PolylineWaypoints.clear();
-
-        PointList tmp = response.getPoints();
-
-        for (int i = 0; i < tmp.getSize(); i++) {
-
-            GeoPoint g = new GeoPoint(tmp.getLatitude(i), tmp.getLongitude(i));
-            mMapController.setCenter(g);
-            PolylineWaypoints.add(g);
-        }
-
-        return PolylineWaypoints;
-    }
-
     private static void crateInstructions() {
-
-        if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>20)
+        if(DatabaseCoordinates.size()>0 && navigationStarted && currentLocation != null)
         {
-            currentInstruction.setVisibility(View.VISIBLE);
-            float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
-            String toStart = String.format("%.2f", distance);
-            currentInstruction.setText("Begeben sie sich zum Start, entfernung: "+toStart);
-        }
+            if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>20)
+            {
+                currentInstruction.setVisibility(View.VISIBLE);
+                float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
 
+                currentInstruction.setText(GetDistanceString(((double) distance)));
+            }
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -711,8 +719,8 @@ public class MapActivity extends Activity {
     }
 
     public static void gotOffCourse(GeoPoint current) {
-if (PolylineWaypoints.size()>0)
-{
+    if (PolylineWaypoints.size()>0)
+    {
     float distance = 0;
     int count = 0;
     for (GeoPoint i :PolylineWaypoints)
@@ -776,5 +784,112 @@ if (PolylineWaypoints.size()>0)
                 .child(user.getUid())
                 .child("whichTourFinished")
                 .push().setValue(id);
+    }
+
+
+
+
+
+        //Timer
+
+    public void stopClick (){
+        hideTimer();
+        mHandler.removeCallbacks(startTimer);
+        stopped = true;
+    }
+
+    private void hideTimer() {
+        ((TextView)findViewById(R.id.timer)).setVisibility(View.INVISIBLE);
+    }
+
+
+    public void startClick (){
+        if(stopped){
+            startTime = System.currentTimeMillis() - elapsedTime;
+        }
+        else{
+            startTime = System.currentTimeMillis();
+        }
+        mHandler.removeCallbacks(startTimer);
+        mHandler.postDelayed(startTimer, 0);
+    }
+
+
+    public void resetClick (){
+        stopped = false;
+        secs = 0;
+        mins = 0;
+        hrs = 0;
+        ((TextView)findViewById(R.id.timer)).setText("00:00:00");
+    }
+
+
+    private Runnable startTimer = new Runnable() {
+        public void run() {
+            elapsedTime = System.currentTimeMillis() - startTime;
+            updateTimer(elapsedTime);
+            mHandler.postDelayed(this,REFRESH_RATE);
+        }
+    };
+
+
+
+
+
+
+    private void updateTimer (float time){
+        secs = (long)(time/1000);
+        mins = (long)((time/1000)/60);
+        hrs = (long)(((time/1000)/60)/60);
+
+		/* Convert the seconds to String
+		 * and format to ensure it has
+		 * a leading zero when required
+		 */
+        secs = secs % 60;
+        seconds=String.valueOf(secs);
+        if(secs == 0){
+            seconds = "00";
+        }
+        if(secs <10 && secs > 0){
+            seconds = "0"+seconds;
+        }
+
+		/* Convert the minutes to String and format the String */
+
+        mins = mins % 60;
+        minutes=String.valueOf(mins);
+        if(mins == 0){
+            minutes = "00";
+        }
+        if(mins <10 && mins > 0){
+            minutes = "0"+minutes;
+        }
+
+    	/* Convert the hours to String and format the String */
+
+        hours=String.valueOf(hrs);
+        if(hrs == 0){
+            hours = "00";
+        }
+        if(hrs <10 && hrs > 0){
+            hours = "0"+hours;
+        }
+
+    	/* Although we are not using milliseconds on the timer in this example
+    	 * I included the code in the event that you wanted to include it on your own
+    	 */
+        milliseconds = String.valueOf((long)time);
+        if(milliseconds.length()==2){
+            milliseconds = "0"+milliseconds;
+        }
+        if(milliseconds.length()<=1){
+            milliseconds = "00";
+        }
+        milliseconds = milliseconds.substring(milliseconds.length()-3, milliseconds.length()-2);
+
+		/* Setting the timer text to the elapsed time */
+        ((TextView)findViewById(R.id.timer)).setVisibility(View.VISIBLE);
+        ((TextView)findViewById(R.id.timer)).setText(hours + ":" + minutes + ":" + seconds);
     }
 }

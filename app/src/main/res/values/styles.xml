@@ -8,4 +8,20 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+        <style name="QTheme" parent="android:Theme.Light">
+            <item name="android:windowBackground">@color/q_green</item>
+            <item name="android:colorBackground">@color/q_green</item>
+            <item name="android:textViewStyle">@style/QText</item>
+        </style>
+
+        <color name="q_green">#008000</color>
+
+        <style name="QText" parent="@android:style/TextAppearance.Medium">
+            <item name="android:textSize">20sp</item>
+            <item name="android:textColor">@color/black</item>
+            <item name="android:textStyle">bold</item>
+            <item name="android:typeface">sans</item>
+        </style>
+
+
 </resources>
