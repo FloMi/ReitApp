@@ -71,6 +71,9 @@ public class LocationService extends Service {
     }
 
     protected boolean isBetterLocation(Location location, Location currentBestLocation) {
+
+        previousBestLocation = currentBestLocation;
+
         if (currentBestLocation == null) {
             // A new location is always better than no location
             return true;
