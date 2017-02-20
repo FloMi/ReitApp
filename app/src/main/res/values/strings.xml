@@ -31,4 +31,6 @@
     <string name="email_confirmation_error">Email stimmt nicht überein</string>
     <string name="email_confirmation">Email bestätigen</string>
     <string name="error_new_user">Fehler beim Anlegen eines neuen Benutzers</string>
+    <string name="forgot_password_label">Passwort vergessen</string>
+    <string name="change_password">Passwort ändern</string>
 </resources>

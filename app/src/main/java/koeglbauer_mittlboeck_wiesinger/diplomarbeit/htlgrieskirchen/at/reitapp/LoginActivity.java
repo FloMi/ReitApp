@@ -139,6 +139,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
+        Button forgotPassword = (Button) findViewById(R.id.forgotPassword);
+        forgotPassword.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickForgotPassword();
+            }
+        });
+
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
         
@@ -474,6 +482,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+    private void onClickForgotPassword()
+    {
+        Intent register = new Intent(this, ForgotPasswordActivity.class);
+        startActivity(register);
     }
 }
 

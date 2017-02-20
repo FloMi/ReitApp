@@ -4,11 +4,18 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -19,6 +26,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     View mProgressView;
     TextView mExpireDate;
+    EditText mPasswordView;
+    EditText mPasswordConfirmationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +36,19 @@ public class SettingsActivity extends AppCompatActivity {
 
         mProgressView = findViewById(R.id.progressBarExpireDate);
         mExpireDate = (TextView) findViewById(R.id.userExpireTextView);
+        mPasswordConfirmationView = (EditText) findViewById(R.id.newPasswordConfirmation);
+        mPasswordView = (EditText) findViewById(R.id.newPassword);
+
+        Button newPasswordButton = (Button) findViewById(R.id.new_password_button);
+        newPasswordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                newPasswordClicked();
+            }
+        });
+
+
+
 
         showProgress(true);
         FirebaseDatabase.getInstance().getReference().child("Users")
@@ -44,6 +66,48 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void newPasswordClicked() {
+        mPasswordView.setError(null);
+        mPasswordConfirmationView.setError(null);
+
+        String password = mPasswordView.getText().toString();
+        String passwordConfirmation = mPasswordConfirmationView.getText().toString();
+
+        boolean cancel = false;
+        View focusView = null;
+
+        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+            mPasswordView.setError(getString(R.string.error_invalid_password));
+            focusView = mPasswordView;
+            cancel = true;
+        }
+
+        if (!password.equals(passwordConfirmation)) {
+            mPasswordConfirmationView.setError(getString(R.string.error_incorrect_password_confirmed));
+            focusView = mPasswordConfirmationView;
+            cancel = true;
+        }
+
+        if (cancel) {
+            focusView.requestFocus();
+        } else {
+            FirebaseAuth.getInstance().getCurrentUser().updatePassword(password).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if(!task.isSuccessful())
+                    {
+                        Toast.makeText(SettingsActivity.this, "Fehler bei Passwort Änderung", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+    }
+    private boolean isPasswordValid(String password) {
+        return password.length() > 6;
+    }
+
+
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow

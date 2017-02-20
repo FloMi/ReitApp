@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -27,16 +27,16 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MapActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".RegisterActivity"
             android:label="@string/activity_register"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".MainMenuActivity"
             android:label="@string/activity_user_label"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".MapActivity"/>
+            android:parentActivityName=".MapActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
@@ -55,28 +55,35 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <service android:enabled="true" android:name=".LocationService" />
+        <service
+            android:name=".LocationService"
+            android:enabled="true" />
 
         <activity
             android:name=".StatisticActivity"
             android:label="@string/activity_statistics_label"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".MainMenuActivity"/>
+            android:parentActivityName=".MainMenuActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SettingsActivity"
             android:label="@string/activity_settings_label"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".MainMenuActivity"/>
+            android:parentActivityName=".MainMenuActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SecurityActivity"
             android:label="@string/activity_security_label"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".MainMenuActivity"/>
+            android:parentActivityName=".MainMenuActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".TourActivity"
             android:label="@string/activity_tour_label"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".MainMenuActivity"/>
+            android:parentActivityName=".MainMenuActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:label="@string/forgot_password_label"
+            android:parentActivityName=".LoginActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>
