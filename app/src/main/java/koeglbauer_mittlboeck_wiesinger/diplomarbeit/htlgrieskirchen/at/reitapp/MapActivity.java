@@ -124,6 +124,7 @@ public class MapActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
+
         startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
 
         startRecord.setOnClickListener(new View.OnClickListener() {
@@ -344,17 +345,6 @@ public class MapActivity extends Activity {
 
     public static void displayMyCurrentLocationOverlay(GeoPoint Location) {
 
-        //if(currentLocation != null)
-        //{
-        //    if(checkIfNextPositionIsValid(Location))
-        //    {
-        //        currentLocation = Location;
-        //    }
-        //}
-        //else
-        //{
-        //    currentLocation = Location;
-        //}
         if (currentLocation == null) {
             currentLocation = Location;
         } else {

@@ -21,6 +21,7 @@
         android:src="@mipmap/ic_menu_white_48dp" />
 
     <android.support.design.widget.FloatingActionButton
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/centermap"
         android:layout_width="30pt"
         android:layout_height="30pt"
@@ -29,10 +30,10 @@
         android:layout_marginBottom="45pt"
         android:layout_marginRight="9pt"
         android:src="@drawable/ic_centered"
-        android:backgroundTint="@color/white"/>
+        app:backgroundTint="@color/white"/>
 
 
-        <android.support.design.widget.FloatingActionButton
+    <android.support.design.widget.FloatingActionButton
             android:id="@+id/startrecording"
             android:layout_width="30pt"
             android:layout_height="30pt"
