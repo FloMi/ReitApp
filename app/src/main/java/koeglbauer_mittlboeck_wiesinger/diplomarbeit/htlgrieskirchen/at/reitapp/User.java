@@ -15,13 +15,14 @@ public class User {
     String email;
     List<Integer> whichTourFinished;
     String status;
+    Boolean newsletter;
 
     public User()
     {
 
     }
 
-    public User(String status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished) {
+    public User(String status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished, Boolean newsletter) {
         this.status = status;
         this.finishedTour = finishedTour;
         this.range = range;
@@ -29,6 +30,7 @@ public class User {
         this.kult = kult;
         this.email = email;
         this.whichTourFinished = whichTourFinished;
+        this.newsletter=newsletter;
     }
 
     public int getFinishedTour() {
@@ -57,5 +59,9 @@ public class User {
 
     public String getStatus() {
         return status;
+    }
+
+    public Boolean getNewsletter() {
+        return newsletter;
     }
 }

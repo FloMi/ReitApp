@@ -27,6 +27,20 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"/>
 
+    <CheckBox
+        android:text="Newsletter erhalten"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/newsletterCheck"
+        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
+
     <TextView
         android:text="@string/change_password"
         android:layout_width="wrap_content"

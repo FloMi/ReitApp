@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +29,7 @@ public class SettingsActivity extends AppCompatActivity {
     TextView mExpireDate;
     EditText mPasswordView;
     EditText mPasswordConfirmationView;
+    CheckBox mNewsletterCheck;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +40,13 @@ public class SettingsActivity extends AppCompatActivity {
         mExpireDate = (TextView) findViewById(R.id.userExpireTextView);
         mPasswordConfirmationView = (EditText) findViewById(R.id.newPasswordConfirmation);
         mPasswordView = (EditText) findViewById(R.id.newPassword);
+        mNewsletterCheck = (CheckBox) findViewById(R.id.newsletterCheck);
+        mNewsletterCheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                newsLetterCheckClicked();
+            }
+        });
 
         Button newPasswordButton = (Button) findViewById(R.id.new_password_button);
         newPasswordButton.setOnClickListener(new View.OnClickListener() {
@@ -53,10 +62,16 @@ public class SettingsActivity extends AppCompatActivity {
         showProgress(true);
         FirebaseDatabase.getInstance().getReference().child("Users")
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .child("status").addListenerForSingleValueEvent(new ValueEventListener() {
+                .addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                mExpireDate.setText("Benutzer läuft ab am: " + dataSnapshot.getValue());
+                mExpireDate.setText("Benutzer läuft ab am: " + dataSnapshot.child("status").getValue());
+                try{
+                    mNewsletterCheck.setChecked((Boolean)dataSnapshot.child("newsletter").getValue());
+                }
+                catch (Exception exc){
+                    mNewsletterCheck.setChecked(false);
+                }
                 showProgress(false);
             }
 
@@ -65,6 +80,12 @@ public class SettingsActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void newsLetterCheckClicked() {
+        FirebaseDatabase.getInstance().getReference().child("Users")
+                .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                .child("newsletter").setValue(mNewsletterCheck.isChecked());
     }
 
     private void newPasswordClicked() {
@@ -101,6 +122,9 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 }
             });
+            Toast.makeText(this, "Passwort geändert", Toast.LENGTH_SHORT).show();
+            mPasswordConfirmationView.setText("");
+            mPasswordView.setText("");
         }
     }
     private boolean isPasswordValid(String password) {

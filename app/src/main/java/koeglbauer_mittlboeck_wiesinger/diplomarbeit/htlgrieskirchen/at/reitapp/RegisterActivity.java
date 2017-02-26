@@ -27,6 +27,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -76,6 +77,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     private EditText mEmailConfirmationView;
     private EditText mPasswordView;
     private EditText mPasswordConfirmationView;
+    private CheckBox mNewsletterCheck;
     private View mProgressView;
     private View mLoginFormView;
 
@@ -118,6 +120,8 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         });
 
         mPasswordConfirmationView = (EditText) findViewById(R.id.passwordConfirmation);
+
+        mNewsletterCheck = (CheckBox) findViewById(R.id.getNewsletterCheck);
 
         Button mEmailSignUpButton = (Button) findViewById(R.id.email_sign_up_button);
         mEmailSignUpButton.setOnClickListener(new OnClickListener() {
@@ -244,7 +248,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(email, password, mNewsletterCheck.isChecked());
             mAuthTask.execute((Void) null);
         }
     }
@@ -363,10 +367,12 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         private final String mEmail;
         private final String mPassword;
+        private final Boolean mNewsletterChecked;
 
-        UserLoginTask(String email, String password) {
+        UserLoginTask(String email, String password, Boolean newsletterChecked) {
             mEmail = email;
             mPassword = password;
+            mNewsletterChecked = newsletterChecked;
         }
 
         @Override
@@ -381,7 +387,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                             registerSucceed = task.isSuccessful();
                             if(task.isSuccessful()) {
                                 mAuth.getCurrentUser().sendEmailVerification();
-                                createNewDatabaseUser();
+                                createNewDatabaseUser(mNewsletterChecked);
                             }
                         }
                     });
@@ -424,11 +430,11 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
     }
 
-    private void createNewDatabaseUser() {
+    private void createNewDatabaseUser(Boolean newsletterChecked) {
         List<Integer> list = new ArrayList<>();
         Date d = new Date();
         SimpleDateFormat f = new SimpleDateFormat("dd.MM.yyyy");
-        User user = new User(f.format(d.getTime()), 0,0,0,0, mAuth.getCurrentUser().getEmail(), list);
+        User user = new User(f.format(d.getTime()), 0,0,0,0, mAuth.getCurrentUser().getEmail(), list, newsletterChecked);
         mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).setValue(user);
     }
 

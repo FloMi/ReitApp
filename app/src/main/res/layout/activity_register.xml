@@ -84,6 +84,15 @@
 
             </android.support.design.widget.TextInputLayout>
 
+            <CheckBox
+                android:text="Newsletter erhalten?"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/getNewsletterCheck"
+                style="@android:style/Widget.Material.CompoundButton.CheckBox"
+                android:textAppearance="@android:style/TextAppearance.Material.Large"
+                android:checked="false" />
+
             <Button
                 android:id="@+id/email_sign_up_button"
                 style="?android:textAppearanceSmall"
