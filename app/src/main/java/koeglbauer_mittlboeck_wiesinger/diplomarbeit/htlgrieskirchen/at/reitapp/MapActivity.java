@@ -43,6 +43,10 @@ import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.compass.CompassOverlay;
+import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
+import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,6 +56,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import static java.lang.Integer.valueOf;
 
@@ -106,6 +111,11 @@ public class MapActivity extends Activity {
 
     float distanceOfRout;
 
+
+
+    MyLocationNewOverlay myLocationOverlay = null;
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -124,6 +134,10 @@ public class MapActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
+
+
+
+
 
         startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
 
@@ -230,7 +244,7 @@ public class MapActivity extends Activity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
-        currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.point));
+        currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.ic_brightness_1_black_24dp));
     }
 
 
@@ -362,6 +376,9 @@ public class MapActivity extends Activity {
 
         if (centerMap) {
             mMapController.animateTo(currentLocation);
+
+
+
         }
 
         if (navigationStarted && DatabaseCoordinates.size() > 0) {
