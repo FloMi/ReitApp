@@ -84,6 +84,8 @@
             android:label="@string/forgot_password_label"
             android:parentActivityName=".LoginActivity"
             android:screenOrientation="portrait"/>
+
+        <receiver android:name=".LocationReceiver"></receiver>
     </application>
 
 </manifest>

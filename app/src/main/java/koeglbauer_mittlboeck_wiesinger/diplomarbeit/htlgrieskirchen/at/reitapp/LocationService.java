@@ -168,6 +168,7 @@ public class LocationService extends Service {
 
     public class MyLocationListener implements LocationListener
     {
+        private MapActivity mapActivity;
 
         public void onLocationChanged(final Location loc)
         {
@@ -179,12 +180,19 @@ public class LocationService extends Service {
                 //intent.putExtra("Longitude", loc.getLongitude());
                 //intent.putExtra("Provider", loc.getProvider());
                 //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
+
+                Intent i = new Intent("LOCATION_CHANGED");
                 GeoPoint currentLocation = new GeoPoint(loc);
-                MapActivity mapActivity = new MapActivity();
-                mapActivity.displayMyCurrentLocationOverlay(currentLocation);
-                mapActivity.calcWayToGoal(currentLocation);
-                mapActivity.startRecordingHike(currentLocation,s);
-                mapActivity.gotOffCourse(currentLocation);
+
+                i.putExtra("currentloclat",currentLocation.getLatitude());
+                i.putExtra("currentloclong",currentLocation.getLongitude());
+                i.putExtra("currentlocProvider",s);
+
+                //mapActivity.displayMyCurrentLocationOverlay(currentLocation);
+               // mapActivity.calcWayToGoal(currentLocation);
+               // mapActivity.startRecordingHike(currentLocation,s);
+               // mapActivity.gotOffCourse(currentLocation);
+
                 sendBroadcast(intent);
 
             }

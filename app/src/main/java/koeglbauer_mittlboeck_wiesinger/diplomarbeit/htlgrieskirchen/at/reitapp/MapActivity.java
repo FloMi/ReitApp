@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -47,6 +48,7 @@ import org.osmdroid.views.overlay.Polyline;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,13 +70,11 @@ public class MapActivity extends Activity {
     TextView distanceleft;
     Marker currentLocationMarker;
     Polyline CoverdTrack;
-    Polyline response;
     List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
     Polyline mainPolyline = new Polyline();
     FloatingActionButton startRecord;
     float distanceOfRout;
     double distanceMovedSinceStart = 0;
-    //Timer
     private TextView tempTextView; //Temporary TextView
     private Button tempBtn; //Temporary Button
     private Handler mHandler = new Handler();
@@ -93,7 +93,9 @@ public class MapActivity extends Activity {
     private boolean centerMap = true;
     private boolean atStartOfRout = true;
     private DatabaseReference mDatabase;
+    ArrayList<PointOfInterest> pointOfInterests = new ArrayList<>();
     private String routID = "0";
+    private LocationReceiver locationreceiver;
     private String routName = "nan";
     private Runnable startTimer = new Runnable() {
         public void run() {
@@ -121,7 +123,6 @@ public class MapActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
-
 
         startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
 
@@ -221,13 +222,24 @@ public class MapActivity extends Activity {
 
         map.setBuiltInZoomControls(false);
 
+
+        locationreceiver = new LocationReceiver(this);
+        IntentFilter fi = new IntentFilter("LOCATION_CHANGED");
+        registerReceiver(locationreceiver,fi);
         Intent i = new Intent(this, LocationService.class);
+
         startService(i);
 
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
         currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.ic_brightness_1_black_24dp));
+    }
+
+    @Override
+    protected void onPause() {
+            super.onPause();
+        unregisterReceiver(locationreceiver);
     }
 
     private void exportToKml() {
@@ -330,7 +342,6 @@ public class MapActivity extends Activity {
                 drawPath();
 
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
@@ -339,7 +350,34 @@ public class MapActivity extends Activity {
 
     }
 
-    public void displayMyCurrentLocationOverlay(GeoPoint Location) {
+    private void InitAttraction() {
+        DatabaseCoordinates.clear();
+        mDatabase.child("Attraction").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                int tourString;
+                for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                    tourString = valueOf(postSnapshot.getKey());
+
+
+
+                    PointOfInterest p = new PointOfInterest(Double.parseDouble(postSnapshot.child("geoLength").getChildren().toString()),Double.parseDouble(postSnapshot.child("geoWidth").getChildren().toString()),postSnapshot.child("Name").getChildren().toString());
+
+                    pointOfInterests.add(p);
+
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+
+    public void displayMyCurrentLocationOverlay(String lat,String longi) {
+
+        GeoPoint Location = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
 
         if (currentLocation == null) {
             currentLocation = Location;
@@ -348,8 +386,8 @@ public class MapActivity extends Activity {
                 currentLocation = Location;
             }
         }
-
         map.getOverlays().remove(currentLocationMarker);
+
         currentLocationMarker.setPosition(currentLocation);
         currentLocationMarker.setTitle("You");
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
@@ -384,7 +422,9 @@ public class MapActivity extends Activity {
         return false;
     }
 
-    public void calcWayToGoal(GeoPoint currentLocation) {
+    public void calcWayToGoal(String lat,String longi) {
+
+        GeoPoint currentLocation = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
 
         //if (!navigationStarted) return;
 
@@ -465,7 +505,9 @@ public class MapActivity extends Activity {
         return distanceInMeters;
     }
 
-    public void startRecordingHike(GeoPoint cl, String s) {
+    public void startRecordingHike(String lat,String longi ,String s) {
+
+        GeoPoint cl = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
 
         if (navigationStarted) {
             if (s.equals("gps")) {
@@ -712,7 +754,10 @@ public class MapActivity extends Activity {
         super.onDestroy();
     }
 
-    public void gotOffCourse(GeoPoint current) {
+    public void gotOffCourse(String lat, String longi) {
+
+        GeoPoint current = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
+
         if (PolylineWaypoints.size() > 0) {
             float distance = 0;
             int count = 0;
