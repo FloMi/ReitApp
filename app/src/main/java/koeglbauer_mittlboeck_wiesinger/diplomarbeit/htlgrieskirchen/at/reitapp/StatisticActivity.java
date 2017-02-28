@@ -18,6 +18,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.DecimalFormat;
+
 public class StatisticActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
@@ -47,6 +49,8 @@ public class StatisticActivity extends AppCompatActivity {
         gast.setText("wird geladen");
         kult.setText("wird geladen");
 
+        final DecimalFormat f = new DecimalFormat("#.###");
+
         showProgress(true);
 
         mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).addValueEventListener(new ValueEventListener() {
@@ -56,7 +60,7 @@ public class StatisticActivity extends AppCompatActivity {
                     switch (postSnapshot.getKey())
                     {
                         case "finishedTour":touren.setText(postSnapshot.getValue().toString());break;
-                        case "range":kilom.setText(postSnapshot.getValue().toString()+" km");break;
+                        case "range":kilom.setText(f.format((double)postSnapshot.getValue())+" km");break;
                         case "gast":gast.setText(postSnapshot.getValue().toString());break;
                         case "kult":kult.setText(postSnapshot.getValue().toString());break;
                     }
