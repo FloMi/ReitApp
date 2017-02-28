@@ -55,6 +55,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
@@ -123,6 +124,8 @@ public class MapActivity extends Activity {
         setContentView(R.layout.activity_map);
 
         Intent intent = getIntent();
+
+        addRangeToday(1.1);
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
@@ -816,6 +819,33 @@ public class MapActivity extends Activity {
                 .child(user.getUid())
                 .child("whichTourFinished")
                 .push().setValue(id);
+    }
+    public void addRangeToday(final double range)
+    {
+        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        final Date today = new Date();
+        final SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
+
+        database.child("Users")
+                .child(user.getUid())
+                .child("rangePerDay").child(f.format(today)).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                double rangeNow;
+                if(dataSnapshot.getValue()!=null)
+                    rangeNow = Double.parseDouble(dataSnapshot.getValue().toString());
+                else
+                    rangeNow = 0.0;
+                rangeNow+=range;
+                database.child("Users").child(user.getUid()).child("rangePerDay").child(f.format(today)).setValue(rangeNow);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(MapActivity.this, "Fehler beim Übertragen einer Statistik", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
