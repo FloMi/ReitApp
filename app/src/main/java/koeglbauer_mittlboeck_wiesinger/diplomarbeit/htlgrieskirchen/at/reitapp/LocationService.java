@@ -180,11 +180,11 @@ public class LocationService extends Service {
                 //intent.putExtra("Provider", loc.getProvider());
                 //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
                 GeoPoint currentLocation = new GeoPoint(loc);
-
-                MapActivity.displayMyCurrentLocationOverlay(currentLocation);
-                MapActivity.calcWayToGoal(currentLocation);
-                MapActivity.startRecordingHike(currentLocation,s);
-                MapActivity.gotOffCourse(currentLocation);
+                MapActivity mapActivity = new MapActivity();
+                mapActivity.displayMyCurrentLocationOverlay(currentLocation);
+                mapActivity.calcWayToGoal(currentLocation);
+                mapActivity.startRecordingHike(currentLocation,s);
+                mapActivity.gotOffCourse(currentLocation);
                 sendBroadcast(intent);
 
             }
