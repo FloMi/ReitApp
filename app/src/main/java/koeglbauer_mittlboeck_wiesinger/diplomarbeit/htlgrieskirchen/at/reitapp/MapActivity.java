@@ -125,8 +125,6 @@ public class MapActivity extends Activity {
 
         Intent intent = getIntent();
 
-        addRangeToday(1.1);
-
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);
