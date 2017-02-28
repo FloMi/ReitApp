@@ -844,6 +844,22 @@ public class MapActivity extends Activity {
                 Toast.makeText(MapActivity.this, "Fehler beim Übertragen einer Statistik", Toast.LENGTH_SHORT).show();
             }
         });
+
+        database.child("Users")
+                .child(user.getUid())
+                .child("range").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                double stat = Double.parseDouble(dataSnapshot.getValue().toString());
+                stat+=range;
+                database.child("Users").child(user.getUid()).child("range").setValue(stat);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(MapActivity.this, "Fehler beim Übertragen einer Statistik", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 

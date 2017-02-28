@@ -1,6 +1,7 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -37,5 +38,13 @@ public class MainMenuActivity extends AppCompatActivity {
     public void onClickTour(View view){
         Intent intent = new Intent(this, TourActivity.class);
         startActivity(intent);
+    }
+    public void onClickTuto(View view){
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+        startActivity(browserIntent);
+    }
+    public void onClickHelp(View view){
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+        startActivity(browserIntent);
     }
 }

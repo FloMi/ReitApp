@@ -17,6 +17,8 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true">
 
+
+
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -34,7 +36,9 @@
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
                 android:drawableTop="@mipmap/ic_map_white_48dp"
-                android:onClick="onClickTour"/>
+                android:onClick="onClickTour"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
         </LinearLayout>
 
         <LinearLayout
@@ -54,7 +58,9 @@
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
                 android:drawableTop="@mipmap/ic_assignment_white_48dp"
-                android:onClick="onClickStatistic" />
+                android:onClick="onClickStatistic"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
 
             <Button
                 android:text="@string/activity_settings_label"
@@ -68,7 +74,47 @@
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
                 android:drawableTop="@mipmap/ic_settings_white_48dp"
-                android:onClick="onClickSettings"/>
+                android:onClick="onClickSettings"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:text="@string/action_tutorial"
+                android:id="@+id/buttonTuto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_tutorial"
+                android:onClick="onClickTuto"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
+
+            <Button
+                android:text="@string/action_help"
+                android:id="@+id/buttonHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
+                android:background="@color/colorPrimary"
+                android:layout_margin="5dp"
+                android:drawableTop="@mipmap/ic_help"
+                android:onClick="onClickHelp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp" />
         </LinearLayout>
 
         <LinearLayout
@@ -88,7 +134,9 @@
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
                 android:drawableTop="@mipmap/ic_security_white_48dp"
-                android:onClick="onClickSecurity"/>
+                android:onClick="onClickSecurity"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
 
             <Button
                 android:text="@string/action_logout"
@@ -102,8 +150,13 @@
                 android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
                 android:drawableTop="@mipmap/ic_exit_to_app_white_48dp"
-                android:onClick="onClickLogout"/>
+                android:onClick="onClickLogout"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"/>
+
         </LinearLayout>
+
+
 
     </LinearLayout>
 
