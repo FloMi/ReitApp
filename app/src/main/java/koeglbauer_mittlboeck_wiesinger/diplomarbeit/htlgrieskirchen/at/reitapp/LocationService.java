@@ -1,5 +1,6 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -181,17 +183,22 @@ public class LocationService extends Service {
                 //intent.putExtra("Provider", loc.getProvider());
                 //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
 
-                Intent i = new Intent("LOCATION_CHANGED");
+
+
+                Intent intent = new Intent();
+                intent.setAction("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
+
                 GeoPoint currentLocation = new GeoPoint(loc);
 
-                i.putExtra("currentloclat",currentLocation.getLatitude());
-                i.putExtra("currentloclong",currentLocation.getLongitude());
-                i.putExtra("currentlocProvider",s);
+                intent.putExtra("currentloclat",currentLocation.getLatitude());
+                intent.putExtra("currentloclong",currentLocation.getLongitude());
+                intent.putExtra("currentlocProvider",s);
 
                 //mapActivity.displayMyCurrentLocationOverlay(currentLocation);
                // mapActivity.calcWayToGoal(currentLocation);
                // mapActivity.startRecordingHike(currentLocation,s);
                // mapActivity.gotOffCourse(currentLocation);
+
 
                 sendBroadcast(intent);
 

@@ -11,6 +11,7 @@ import android.content.Intent;
 public class LocationReceiver extends BroadcastReceiver {
     private Context context;
     private MapActivity activity;
+
     public LocationReceiver(Context context) {
         this.context = context;
         this.activity = (MapActivity) context;
@@ -21,9 +22,13 @@ public class LocationReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        activity.displayMyCurrentLocationOverlay(intent.getStringExtra("currentloclat"),intent.getStringExtra("currentloclong"));
-        activity.calcWayToGoal(intent.getStringExtra("currentloclat"),intent.getStringExtra("currentloclong"));
-        activity.startRecordingHike(intent.getStringExtra("currentloclat"),intent.getStringExtra("currentloclong"),intent.getStringExtra("currentlocProvider"));
-        activity.gotOffCourse(intent.getStringExtra("currentloclat"),intent.getStringExtra("currentloclong"));
+
+        double a = intent.getDoubleExtra("currentloclat",-1.0);
+        double s = intent.getDoubleExtra("currentloclong",-1.0);
+
+        activity.displayMyCurrentLocationOverlay(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
+        activity.calcWayToGoal(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
+        activity.startRecordingHike(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0),intent.getStringExtra("currentlocProvider"));
+        activity.gotOffCourse(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
     }
 }

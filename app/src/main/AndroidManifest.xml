@@ -85,7 +85,12 @@
             android:parentActivityName=".LoginActivity"
             android:screenOrientation="portrait"/>
 
-        <receiver android:name=".LocationReceiver"></receiver>
+        <receiver android:name=".LocationReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.INPUT_METHOD_CHANGED"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

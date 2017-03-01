@@ -224,9 +224,10 @@ public class MapActivity extends Activity {
 
 
         locationreceiver = new LocationReceiver(this);
-        IntentFilter fi = new IntentFilter("LOCATION_CHANGED");
-        registerReceiver(locationreceiver,fi);
         Intent i = new Intent(this, LocationService.class);
+        IntentFilter fi = new IntentFilter("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
+        registerReceiver(locationreceiver,fi);
+
 
         startService(i);
 
@@ -375,9 +376,9 @@ public class MapActivity extends Activity {
 
     }
 
-    public void displayMyCurrentLocationOverlay(String lat,String longi) {
+    public void displayMyCurrentLocationOverlay(double lat,double longi) {
 
-        GeoPoint Location = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
+        GeoPoint Location = new GeoPoint(lat,longi);
 
         if (currentLocation == null) {
             currentLocation = Location;
@@ -422,9 +423,9 @@ public class MapActivity extends Activity {
         return false;
     }
 
-    public void calcWayToGoal(String lat,String longi) {
+    public void calcWayToGoal(double lat,double longi) {
 
-        GeoPoint currentLocation = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
+        GeoPoint currentLocation = new GeoPoint(lat,longi);
 
         //if (!navigationStarted) return;
 
@@ -505,9 +506,9 @@ public class MapActivity extends Activity {
         return distanceInMeters;
     }
 
-    public void startRecordingHike(String lat,String longi ,String s) {
+    public void startRecordingHike(double lat,double longi ,String s) {
 
-        GeoPoint cl = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
+        GeoPoint cl = new GeoPoint(lat,longi);
 
         if (navigationStarted) {
             if (s.equals("gps")) {
@@ -754,9 +755,9 @@ public class MapActivity extends Activity {
         super.onDestroy();
     }
 
-    public void gotOffCourse(String lat, String longi) {
+    public void gotOffCourse(double lat, double longi) {
 
-        GeoPoint current = new GeoPoint(Double.parseDouble(lat),Double.parseDouble(longi));
+        GeoPoint current = new GeoPoint(lat,longi);
 
         if (PolylineWaypoints.size() > 0) {
             float distance = 0;
