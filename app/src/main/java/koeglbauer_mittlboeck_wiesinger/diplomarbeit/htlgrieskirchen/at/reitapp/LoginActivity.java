@@ -86,6 +86,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
+    private View mCancelView;
     private View mLoginFormView;
 
     @Override
@@ -149,6 +150,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        mCancelView=findViewById(R.id.cancelButton);
         
         if(!isNetworkAvailable())
             Toast.makeText(this, "Überprüfen Sie Ihre Internet Verbindung!", Toast.LENGTH_LONG).show();
@@ -179,6 +181,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     {
                         showProgress(false);
                         Toast.makeText(LoginActivity.this, "Benutzer abgelaufen", Toast.LENGTH_SHORT).show();
+                        if(mAuth.getCurrentUser()!=null)
+                        {
+                            mAuth.signOut();
+                        }
                     }
                 } catch (ParseException e) {
                     Toast.makeText(LoginActivity.this, "ERROR - false date in database", Toast.LENGTH_SHORT).show();
@@ -188,7 +194,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                showProgress(false);
+                Toast.makeText(LoginActivity.this, "Bitte erneut anmelden", Toast.LENGTH_SHORT).show();
+                if(mAuth.getCurrentUser()!=null)
+                {
+                    mAuth.signOut();
+                }
             }
         });
     }
@@ -327,6 +338,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             });
 
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            //mCancelView.setVisibility(show ? View.VISIBLE : View.GONE);
             mProgressView.animate().setDuration(shortAnimTime).alpha(
                     show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
                 @Override
@@ -338,8 +350,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // The ViewPropertyAnimator APIs are not available, so simply show
             // and hide the relevant UI components.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            //mCancelView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
+    }
+
+    public void onClickCancelLogin(View view)
+    {
+
     }
 
     @Override

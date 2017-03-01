@@ -21,6 +21,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class TourActivity extends AppCompatActivity {
@@ -46,7 +47,8 @@ public class TourActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = list.getItemAtPosition(position);
-                startMap(position+";"+listItem.toString());
+                //startMap(position+";"+listItem.toString());
+                Toast.makeText(TourActivity.this, position+";" +listItem.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -60,26 +62,33 @@ public class TourActivity extends AppCompatActivity {
 
     private void InitTourList() {
         list = (ListView) findViewById(R.id.tourList);
-        adapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listItems);
+
+        /*adapter=new ArrayAdapter<String>(this, R.layout.tour_list, listItems);
         list.setAdapter(adapter);
         adapter.clear();
-        adapter.add("Touren werden geladen");
+        adapter.add("Touren werden geladen");*/
         showProgress(true);
 
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String tourString = "";
-                adapter.clear();
+                List<String> itemname = new ArrayList<String>();
+                List<String> itemdesc = new ArrayList<String>();
+                List<Integer>  imgid = new ArrayList<Integer>();
+                List<String> itemnumb = new ArrayList<String>();
+
+                //adapter.clear();
 
                 for(DataSnapshot postSnapshot: dataSnapshot.child("Paths").getChildren())
                 {
+
                     boolean hasFinished = false;
                     String tourNumber = postSnapshot.getKey();
                     int tourDisplayNumber = Integer.parseInt(tourNumber);
                     tourDisplayNumber++;
-                    tourString=tourDisplayNumber+": ";
-                    tourString+=postSnapshot.child("Name").getValue().toString();
+                    itemnumb.add(tourDisplayNumber+"");
+                    tourString=postSnapshot.child("Name").getValue().toString();
 
                     for(DataSnapshot postSnapshot2: dataSnapshot.child("Users").child(mAuth.getCurrentUser().getUid()).child("whichTourFinished").getChildren())
                     {
@@ -91,14 +100,25 @@ public class TourActivity extends AppCompatActivity {
                     }
                     if(hasFinished)
                     {
-                        tourString = "☑ " + tourString;
+                        //tourString = "☑ " + tourString;
+                        imgid.add(R.mipmap.ic_tour_done);
                     }
                     else
                     {
-                        tourString = "☐ " + tourString;
+                        //tourString = "☐ " + tourString;
+                        imgid.add(R.mipmap.ic_tour_cross);
                     }
-                    adapter.add(tourString);
+                    //adapter.add(tourString);
+                    itemname.add(tourString);
+                    itemdesc.add(postSnapshot.child("Range").getValue().toString()+ " m");
                 }
+                String[] arr1 = new String[itemname.size()];
+                String[] arr2 = new String[itemname.size()];
+                String[] arr4 = new String[itemname.size()];
+                Integer[] arr3 = new Integer[imgid.size()];
+                TourListAdapter listAdapter=new TourListAdapter(TourActivity.this, itemname.toArray(arr1), imgid.toArray(arr3), itemdesc.toArray(arr2), itemnumb.toArray(arr4));
+                list.setAdapter(listAdapter);
+
                 showProgress(false);
             }
 

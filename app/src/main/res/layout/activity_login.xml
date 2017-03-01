@@ -103,4 +103,17 @@
         android:layout_marginBottom="8dp"
         android:visibility="gone" />
 
+    <Button
+        android:id="@+id/cancelButton"
+        style="@android:style/TextAppearance.Material.Small"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/cancel"
+        android:textStyle="bold"
+        android:backgroundTint="@color/colorPrimary"
+        android:textColor="@color/white"
+        android:visibility="gone"
+        android:onClick="onClickCancelLogin"/>
+
 </LinearLayout>

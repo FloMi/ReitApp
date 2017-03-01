@@ -38,4 +38,5 @@
     <string name="newsletter_string">Wenn Sie den auf der Webseite angebotenen Newsletter beziehen möchten, benötigen wir von Ihnen eine E-Mail-Adresse sowie Informationen, welche uns die Überprüfung gestatten, dass Sie der Inhaber der angegebenen E-Mail-Adresse sind und mit dem Empfang des Newsletters einverstanden sind. Weitere Daten werden nicht erhoben. Diese Daten verwenden wir ausschließlich für den Versand der angeforderten Informationen und geben sie nicht an Dritte weiter.\n\nDie erteilte Einwilligung zur Speicherung der Daten, der E-Mail-Adresse sowie deren Nutzung zum Versand des Newsletters können Sie jederzeit in den Einstellungen widerrufen.</string>
     <string name="action_tutorial">Tutorial</string>
     <string name="action_help">Hilfe</string>
+    <string name="cancel">Abbrechen</string>
 </resources>

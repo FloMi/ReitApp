@@ -6,12 +6,6 @@
     android:layout_height="match_parent"
     tools:context="koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.TourActivity">
 
-    <ListView
-        android:id="@+id/tourList"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
     <ProgressBar
         android:id="@+id/tour_progress"
         style="@android:style/Widget.Material.Light.ProgressBar.Large"
@@ -19,4 +13,16 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:visibility="gone" />
+
+    <ListView
+        android:id="@+id/tourList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/tour_progress"
+        android:layout_alignParentEnd="true"
+        android:dividerHeight="2dp"
+        android:headerDividersEnabled="true"
+        android:background="@color/white"
+        android:footerDividersEnabled="true"
+        android:divider="@android:color/background_light" />
 </RelativeLayout>

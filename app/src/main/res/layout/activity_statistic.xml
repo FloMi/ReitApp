@@ -46,7 +46,12 @@
                 android:layout_gravity="left"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
         </TableRow>
-
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"/>
         <TableRow
             android:layout_width="fill_parent"
             android:layout_height="match_parent"
@@ -68,7 +73,12 @@
                 android:layout_gravity="left"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
         </TableRow>
-
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"/>
         <TableRow
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -90,8 +100,12 @@
                 android:layout_gravity="left"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
         </TableRow>
-
-
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"/>
         <TableRow
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -113,6 +127,19 @@
                 android:layout_gravity="left"
                 android:textAppearance="@android:style/TextAppearance.Material.Large" />
         </TableRow>
+
+
+        <Button
+            android:id="@+id/openStatistikLink"
+            style="?android:textAppearanceSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="erweitere Ansicht"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:onClick="onClickStatisticLink"/>
 
     </TableLayout>
 
