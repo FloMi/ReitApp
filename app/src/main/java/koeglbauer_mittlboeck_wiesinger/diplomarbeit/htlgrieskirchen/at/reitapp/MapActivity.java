@@ -24,6 +24,7 @@ import android.text.InputType;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -115,6 +116,9 @@ MapActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
+
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
@@ -205,7 +209,19 @@ MapActivity extends Activity {
 
         routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
 
+        Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
+                R.anim.slide_down);
+
+        Animation slide_up = AnimationUtils.loadAnimation(getApplicationContext(),
+                R.anim.slide_up);
+
         if (routID != null) {
+            //slide up navigationLayout
+
+            findViewById(R.id.layout).setVisibility(View.VISIBLE);
+            findViewById(R.id.layout).startAnimation(slide_up);
+            findViewById(R.id.startrout).setVisibility(View.VISIBLE);
+            findViewById(R.id.startrout).startAnimation(slide_up);
 
             String[] s = routID.split(":");
 
@@ -217,6 +233,11 @@ MapActivity extends Activity {
 
 
         } else {
+            //slide down navigationLayout
+
+            findViewById(R.id.layout).setVisibility(View.GONE);
+            findViewById(R.id.layout).startAnimation(slide_down);
+            findViewById(R.id.startrout).startAnimation(slide_down);
             startNav.setVisibility(View.INVISIBLE);
             currenttour.setVisibility(View.INVISIBLE);
         }
