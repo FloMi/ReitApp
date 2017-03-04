@@ -247,9 +247,17 @@ MapActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        IntentFilter fi = new IntentFilter("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
+        registerReceiver(locationreceiver,fi);
+        super.onResume();
+    }
+
+    @Override
     protected void onPause() {
-            super.onPause();
         unregisterReceiver(locationreceiver);
+            super.onPause();
+
     }
 
     private void exportToKml() {
