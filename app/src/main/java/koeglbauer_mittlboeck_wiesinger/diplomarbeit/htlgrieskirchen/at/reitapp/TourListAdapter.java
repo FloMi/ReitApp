@@ -14,8 +14,9 @@ public class TourListAdapter extends ArrayAdapter<String> {
     private final Integer[] imgid;
     private final String[] itemdesc;
     private final String[] itemnumb;
+    private final Integer[] backgroundid;
 
-    public TourListAdapter(Activity context, String[] itemname, Integer[] imgid, String[] itemdesc, String[] itemnumb)
+    public TourListAdapter(Activity context, String[] itemname, Integer[] imgid, String[] itemdesc, String[] itemnumb, Integer[] backgroundid)
     {
         super(context, R.layout.tour_list, itemname);
         this.context=context;
@@ -23,6 +24,7 @@ public class TourListAdapter extends ArrayAdapter<String> {
         this.imgid=imgid;
         this.itemdesc=itemdesc;
         this.itemnumb=itemnumb;
+        this.backgroundid = backgroundid;
     }
 
     public View getView(int position, View view, ViewGroup parent) {
@@ -33,7 +35,9 @@ public class TourListAdapter extends ArrayAdapter<String> {
         ImageView imageView = (ImageView) rowView.findViewById(R.id.tourListImageView);
         TextView txtDescription = (TextView) rowView.findViewById(R.id.tourListRangeView);
         TextView txtNumber = (TextView) rowView.findViewById(R.id.tourListNumberView);
+        View layout=rowView.findViewById(R.id.tourListLayoutView);
 
+        layout.setBackgroundResource(backgroundid[position]);
         txtTitle.setText(itemname[position]);
         imageView.setImageResource(imgid[position]);
         txtDescription.setText(itemdesc[position]);

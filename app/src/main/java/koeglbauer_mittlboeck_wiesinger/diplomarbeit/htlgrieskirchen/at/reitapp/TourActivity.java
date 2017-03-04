@@ -77,6 +77,7 @@ public class TourActivity extends AppCompatActivity {
                 List<String> itemdesc = new ArrayList<String>();
                 List<Integer>  imgid = new ArrayList<Integer>();
                 List<String> itemnumb = new ArrayList<String>();
+                List<Integer> backgroundid = new ArrayList<Integer>();
 
                 //adapter.clear();
 
@@ -111,12 +112,19 @@ public class TourActivity extends AppCompatActivity {
                     //adapter.add(tourString);
                     itemname.add(tourString);
                     itemdesc.add(postSnapshot.child("Range").getValue().toString()+ " m");
+                    if(itemname.size()%2==0)
+                        backgroundid.add(R.color.colorPrimary);
+                    else
+                    {
+                        backgroundid.add(R.color.colorPrimaryDark);
+                    }
                 }
                 String[] arr1 = new String[itemname.size()];
                 String[] arr2 = new String[itemname.size()];
                 String[] arr4 = new String[itemname.size()];
                 Integer[] arr3 = new Integer[imgid.size()];
-                TourListAdapter listAdapter=new TourListAdapter(TourActivity.this, itemname.toArray(arr1), imgid.toArray(arr3), itemdesc.toArray(arr2), itemnumb.toArray(arr4));
+                Integer[] arr5 = new Integer[imgid.size()];
+                TourListAdapter listAdapter=new TourListAdapter(TourActivity.this, itemname.toArray(arr1), imgid.toArray(arr3), itemdesc.toArray(arr2), itemnumb.toArray(arr4), backgroundid.toArray(arr5));
                 list.setAdapter(listAdapter);
 
                 showProgress(false);

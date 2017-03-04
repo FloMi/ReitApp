@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -26,6 +27,7 @@ import com.google.firebase.database.ValueEventListener;
 public class SettingsActivity extends AppCompatActivity {
 
     View mProgressView;
+    ViewGroup mSettingsView;
     TextView mExpireDate;
     EditText mPasswordView;
     EditText mPasswordConfirmationView;
@@ -40,6 +42,7 @@ public class SettingsActivity extends AppCompatActivity {
         mExpireDate = (TextView) findViewById(R.id.userExpireTextView);
         mPasswordConfirmationView = (EditText) findViewById(R.id.newPasswordConfirmation);
         mPasswordView = (EditText) findViewById(R.id.newPassword);
+        mSettingsView= (ViewGroup) findViewById(R.id.settings_view);
         mNewsletterCheck = (CheckBox) findViewById(R.id.newsletterCheck);
         mNewsletterCheck.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -98,9 +101,22 @@ public class SettingsActivity extends AppCompatActivity {
         boolean cancel = false;
         View focusView = null;
 
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        if (TextUtils.isEmpty(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
+            cancel = true;
+        } else if (!isPasswordValid(password)) {
+            mPasswordView.setError(getString(R.string.error_invalid_password));
+            focusView = mPasswordView;
+            cancel = true;
+        }
+        if (TextUtils.isEmpty(passwordConfirmation)) {
+            mPasswordConfirmationView.setError(getString(R.string.error_invalid_password));
+            focusView = mPasswordConfirmationView;
+            cancel = true;
+        } else if (!isPasswordValid(passwordConfirmation)) {
+            mPasswordConfirmationView.setError(getString(R.string.error_invalid_password));
+            focusView = mPasswordConfirmationView;
             cancel = true;
         }
 
@@ -118,7 +134,7 @@ public class SettingsActivity extends AppCompatActivity {
                 public void onComplete(@NonNull Task<Void> task) {
                     if(!task.isSuccessful())
                     {
-                        Toast.makeText(SettingsActivity.this, "Fehler bei Passwort Änderung", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SettingsActivity.this, "Fehler bei Passwort Änderung. Bitte loggen Sie sich erneut ein.", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -140,6 +156,15 @@ public class SettingsActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
             int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
+            mSettingsView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mSettingsView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mSettingsView.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mProgressView.animate().setDuration(shortAnimTime).alpha(
                     show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
@@ -152,6 +177,7 @@ public class SettingsActivity extends AppCompatActivity {
             // The ViewPropertyAnimator APIs are not available, so simply show
             // and hide the relevant UI components.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mSettingsView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
 }

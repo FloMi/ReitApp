@@ -60,60 +60,67 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="@string/action_sign_in"
-                android:textStyle="bold"
                 android:backgroundTint="@color/colorPrimary"
-                android:textColor="@color/white" />
+                android:text="@string/action_sign_in"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:weightSum="1">
-                <Button
-                    android:text="Benutzer erstellen"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/registerButton"
-                    style="@android:style/TextAppearance.Material.Small"
-                    tools:textStyle="bold"
-                    android:backgroundTint="@color/colorPrimary"
-                    android:textColor="@color/white"
-                    android:layout_weight="1" />
 
                 <Button
-                    android:text="Passwort vergessen?"
+                    android:id="@+id/registerButton"
+                    style="@android:style/TextAppearance.Material.Small"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/colorPrimary"
+                    android:text="Benutzer erstellen"
+                    android:textColor="@color/white"
+                    tools:textStyle="bold" />
+
+                <Button
                     android:id="@+id/forgotPassword"
                     style="@android:style/TextAppearance.Material.Small"
-                    tools:textStyle="bold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:backgroundTint="@color/colorPrimary"
+                    android:text="Passwort vergessen?"
                     android:textColor="@color/white"
-                    android:layout_weight="1" />
+                    tools:textStyle="bold" />
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <ProgressBar
+    <LinearLayout
         android:id="@+id/login_progress"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/cancelButton"
-        style="@android:style/TextAppearance.Material.Small"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/cancel"
-        android:textStyle="bold"
-        android:backgroundTint="@color/colorPrimary"
-        android:textColor="@color/white"
-        android:visibility="gone"
-        android:onClick="onClickCancelLogin"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/login_progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/cancelButton"
+            style="@android:style/TextAppearance.Material.Small"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:onClick="onClickCancelLogin"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </LinearLayout>

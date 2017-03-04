@@ -39,4 +39,5 @@
     <string name="action_tutorial">Tutorial</string>
     <string name="action_help">Hilfe</string>
     <string name="cancel">Abbrechen</string>
+    <string name="login_canceld">Login abgebrochen</string>
 </resources>

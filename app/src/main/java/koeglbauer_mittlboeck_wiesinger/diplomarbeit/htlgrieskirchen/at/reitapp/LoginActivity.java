@@ -52,6 +52,7 @@ import com.google.firebase.appindexing.Indexable;
 import com.google.firebase.appindexing.builders.Actions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
@@ -81,13 +82,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     boolean loginSuceed = false;
+    private ValueEventListener listener = null;
+    private DatabaseReference refStatus = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
-    private View mCancelView;
     private View mLoginFormView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,8 +153,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        mCancelView=findViewById(R.id.cancelButton);
-        
+
         if(!isNetworkAvailable())
             Toast.makeText(this, "Überprüfen Sie Ihre Internet Verbindung!", Toast.LENGTH_LONG).show();
 
@@ -163,9 +165,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private void checkIfUserIsPermitted() {
         showProgress(true);
-        FirebaseDatabase.getInstance().getReference().child("Users")
-                .child(mAuth.getCurrentUser().getUid())
-                .child("status").addListenerForSingleValueEvent(new ValueEventListener() {
+        listener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Date today = new Date();
@@ -188,6 +188,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     }
                 } catch (ParseException e) {
                     Toast.makeText(LoginActivity.this, "ERROR - false date in database", Toast.LENGTH_SHORT).show();
+                    if(mAuth.getCurrentUser()!=null)
+                    {
+                        mAuth.signOut();
+                    }
                     e.printStackTrace();
                 }
             }
@@ -195,13 +199,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 showProgress(false);
-                Toast.makeText(LoginActivity.this, "Bitte erneut anmelden", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, R.string.login_canceld, Toast.LENGTH_SHORT).show();
                 if(mAuth.getCurrentUser()!=null)
                 {
                     mAuth.signOut();
                 }
             }
-        });
+        };
+        refStatus=FirebaseDatabase.getInstance().getReference().child("Users").child(mAuth.getCurrentUser().getUid()).child("status");
+        refStatus.addListenerForSingleValueEvent(listener);
     }
 
     private void onClickOpenMap() {
@@ -338,7 +344,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             });
 
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            //mCancelView.setVisibility(show ? View.VISIBLE : View.GONE);
             mProgressView.animate().setDuration(shortAnimTime).alpha(
                     show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
                 @Override
@@ -350,14 +355,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // The ViewPropertyAnimator APIs are not available, so simply show
             // and hide the relevant UI components.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            //mCancelView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
 
     public void onClickCancelLogin(View view)
     {
-
+        if(refStatus!=null)
+            refStatus.removeEventListener(listener);
+        if(mAuthTask!=null) {
+            if (mAuthTask.getStatus() == AsyncTask.Status.RUNNING)
+                mAuthTask.cancel(true);
+        }
     }
 
     @Override
