@@ -58,7 +58,8 @@ import java.util.List;
 
 import static java.lang.Integer.valueOf;
 
-public class MapActivity extends Activity {
+public class
+MapActivity extends Activity {
 
     private final int REFRESH_RATE = 100;
     private final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
