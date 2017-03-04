@@ -8,11 +8,13 @@ import org.osmdroid.util.GeoPoint;
 
 public class PointOfInterest {
 
+    int id;
     double latitude;
     double longitude;
     String name;
 
-    public PointOfInterest(double latitude, double longitude, String name) {
+    public PointOfInterest(int id, double latitude, double longitude, String name) {
+        this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
         this.name = name;
@@ -32,6 +34,14 @@ public class PointOfInterest {
 
     public double getLongitude() {
         return longitude;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public double getId() {
+        return id;
     }
 
     public void setLongitude(double longitude) {

@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.1"
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId "koegelbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp"
         minSdkVersion 21
@@ -24,10 +24,8 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
     compile 'org.osmdroid:osmdroid-android:5.5:release@aar'
-
-
-    compile 'com.graphhopper:directions-api-java-client:0.8.2.1'
     compile 'com.github.MKergall:osmbonuspack:6.0'
     compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.android.support:design:25.2.0'

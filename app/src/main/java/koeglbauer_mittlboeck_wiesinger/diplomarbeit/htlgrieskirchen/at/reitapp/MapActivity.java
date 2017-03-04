@@ -1,8 +1,11 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -19,6 +22,8 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.text.InputType;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -28,6 +33,7 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.appindexing.builders.PersonBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -201,10 +207,10 @@ MapActivity extends Activity {
 
         if (routID != null) {
 
-            String[] s = routID.split(";");
+            String[] s = routID.split(":");
 
             routID = (valueOf(s[0])) + "";
-            routName = s[1].split(":")[1];
+            routName = s[1];
 
 
             startNav.setVisibility(View.VISIBLE);
@@ -235,7 +241,9 @@ MapActivity extends Activity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
-        currentLocationMarker.setIcon(getResources().getDrawable(R.drawable.ic_brightness_1_black_24dp));
+        currentLocationMarker.setIcon(ContextCompat.getDrawable(this,R.drawable.ic_brightness_1_black_24dp));
+
+        InitAttraction();
     }
 
     @Override
@@ -321,6 +329,7 @@ MapActivity extends Activity {
     }
 
     private void InitTourList() {
+
         DatabaseCoordinates.clear();
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
@@ -328,8 +337,9 @@ MapActivity extends Activity {
                 int tourString;
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
                     tourString = valueOf(postSnapshot.getKey());
-                    String[] parts = routID.split(":");
-                    if (tourString == valueOf(parts[0])) {
+
+                    if (tourString == valueOf(routID))
+                    {
                         postSnapshot.child("Coordinates").getChildren();
 
                         for (DataSnapshot ps : postSnapshot.child("Coordinates").getChildren()) {
@@ -353,21 +363,33 @@ MapActivity extends Activity {
     }
 
     private void InitAttraction() {
-        DatabaseCoordinates.clear();
-        mDatabase.child("Attraction").addValueEventListener(new ValueEventListener() {
+        pointOfInterests.clear();
+        mDatabase.child("Attractions").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                int tourString;
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                    tourString = valueOf(postSnapshot.getKey());
 
-
-
-                    PointOfInterest p = new PointOfInterest(Double.parseDouble(postSnapshot.child("geoLength").getChildren().toString()),Double.parseDouble(postSnapshot.child("geoWidth").getChildren().toString()),postSnapshot.child("Name").getChildren().toString());
-
+                    PointOfInterest p = new PointOfInterest(valueOf(postSnapshot.getKey()), Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()),Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()),postSnapshot.child("Name").getValue().toString());
                     pointOfInterests.add(p);
-
                 }
+
+                for(PointOfInterest i :pointOfInterests)
+                {
+                    Marker cc;
+                    cc = new Marker(map);
+                    map.getOverlays().add(cc);
+
+                    cc.setIcon(getResources().getDrawable(R.drawable.pointofinterest));
+
+                    GeoPoint g = new GeoPoint(i.getLatitude(),i.getLongitude());
+
+                    cc.setPosition(g);
+
+                    cc.setTitle(i.getName()+"");
+                    cc.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                    map.getOverlays().add(currentLocationMarker);
+                }
+
             }
             @Override
             public void onCancelled(DatabaseError databaseError) {
@@ -619,6 +641,7 @@ MapActivity extends Activity {
     private void startNavigation() {
 
         InitTourList();
+
 
         if (navigationStarted) {
             navigationStarted = false;
