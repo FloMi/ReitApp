@@ -68,10 +68,8 @@ import static java.lang.Integer.valueOf;
 public class
 MapActivity extends Activity {
 
-    private final int REFRESH_RATE = 100;
     private final int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
     GeoPoint currentLocation;
-    GeoPoint previousBestLocation;
     List<GeoPoint> MovedDistance = new ArrayList<>();
     ArrayList<GeoPoint> PolylineWaypoints = new ArrayList<>();
     TextView distanceofrout;
@@ -81,16 +79,7 @@ MapActivity extends Activity {
     List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
     Polyline mainPolyline = new Polyline();
     FloatingActionButton startRecord;
-    float distanceOfRout;
     double distanceMovedSinceStart = 0;
-    private TextView tempTextView; //Temporary TextView
-    private Button tempBtn; //Temporary Button
-    private Handler mHandler = new Handler();
-    private long startTime;
-    private long elapsedTime;
-    private String hours, minutes, seconds, milliseconds;
-    private long secs, mins, hrs;
-    private boolean stopped = false;
     private TextView currenttour;
     private Double DistanceToGoal = 0.0;
     private MapView map;
@@ -104,38 +93,32 @@ MapActivity extends Activity {
     ArrayList<PointOfInterest> pointOfInterests = new ArrayList<>();
     private String routID = "0";
     private LocationReceiver locationreceiver;
+    private Timer timer;
     private String routName = "nan";
-    private Runnable startTimer = new Runnable() {
-        public void run() {
-            elapsedTime = System.currentTimeMillis() - startTime;
-            updateTimer(elapsedTime);
-            mHandler.postDelayed(this, REFRESH_RATE);
-        }
-    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
-
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
-
-        Intent intent = getIntent();
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);
         distanceleft = (TextView) findViewById(R.id.distanceleft);
         currenttour = (TextView) findViewById(R.id.currenttour);
+        startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
+        final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
+        FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
+        final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
 
+
+        InitAttraction();
+        SetMap();
 
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
-
-        startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
 
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -151,7 +134,8 @@ MapActivity extends Activity {
 
         });
 
-        FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
+        Intent intent = getIntent();
+
         myFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 openUserActivity();
@@ -159,8 +143,6 @@ MapActivity extends Activity {
             }
         });
 
-
-        final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
         centermap.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
@@ -176,9 +158,11 @@ MapActivity extends Activity {
         });
 
 
-        final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
+
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                timer = new Timer(getActivity());
 
                 if (navigationStarted) {
                     startNav.setImageResource(R.drawable.ic_navigation_arrow);
@@ -187,8 +171,8 @@ MapActivity extends Activity {
                     distanceleft.setText("");
 
                     clearMap();
-                    resetClick();
-                    stopClick();
+                    timer.resetClick();
+                    timer.stopClick();
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
 
@@ -196,7 +180,7 @@ MapActivity extends Activity {
                 } else {
                     startNavigation();
                     startNav.setImageResource(R.drawable.ic_stopnav);
-                    startClick();
+                    timer.startClick();
                     currenttour.setVisibility(View.VISIBLE);
                     distanceofrout.setVisibility(View.VISIBLE);
                     navigationStarted = true;
@@ -216,8 +200,8 @@ MapActivity extends Activity {
                 R.anim.slide_up);
 
         if (routID != null) {
-            //slide up navigationLayout
 
+            //slide up navigationLayout
             findViewById(R.id.layout).setVisibility(View.VISIBLE);
             findViewById(R.id.layout).startAnimation(slide_up);
             findViewById(R.id.startrout).setVisibility(View.VISIBLE);
@@ -233,8 +217,8 @@ MapActivity extends Activity {
 
 
         } else {
-            //slide down navigationLayout
 
+            //slide down navigationLayout
             findViewById(R.id.layout).setVisibility(View.GONE);
             findViewById(R.id.layout).startAnimation(slide_down);
             findViewById(R.id.startrout).startAnimation(slide_down);
@@ -242,10 +226,8 @@ MapActivity extends Activity {
             currenttour.setVisibility(View.INVISIBLE);
         }
 
-
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
-        SetMap();
 
 
         map.setBuiltInZoomControls(false);
@@ -263,8 +245,15 @@ MapActivity extends Activity {
 
         currentLocationMarker = new Marker(map);
         currentLocationMarker.setIcon(ContextCompat.getDrawable(this,R.drawable.ic_brightness_1_black_24dp));
+    }
 
-        InitAttraction();
+    private void InitOnClickListener() {
+    }
+
+
+    private MapActivity getActivity()
+    {
+        return this;
     }
 
     @Override
@@ -919,87 +908,5 @@ MapActivity extends Activity {
         });
     }
 
-    public void stopClick() {
-        hideTimer();
-        mHandler.removeCallbacks(startTimer);
-        stopped = true;
-    }
 
-    private void hideTimer() {
-        ((TextView) findViewById(R.id.timer)).setVisibility(View.INVISIBLE);
-    }
-
-    public void startClick() {
-        if (stopped) {
-            startTime = System.currentTimeMillis() - elapsedTime;
-        } else {
-            startTime = System.currentTimeMillis();
-        }
-        mHandler.removeCallbacks(startTimer);
-        mHandler.postDelayed(startTimer, 0);
-    }
-
-    public void resetClick() {
-        stopped = false;
-        secs = 0;
-        mins = 0;
-        hrs = 0;
-        ((TextView) findViewById(R.id.timer)).setText("00:00:00");
-    }
-
-    private void updateTimer(float time) {
-        secs = (long) (time / 1000);
-        mins = (long) ((time / 1000) / 60);
-        hrs = (long) (((time / 1000) / 60) / 60);
-
-		/* Convert the seconds to String
-         * and format to ensure it has
-		 * a leading zero when required
-		 */
-        secs = secs % 60;
-        seconds = String.valueOf(secs);
-        if (secs == 0) {
-            seconds = "00";
-        }
-        if (secs < 10 && secs > 0) {
-            seconds = "0" + seconds;
-        }
-
-		/* Convert the minutes to String and format the String */
-
-        mins = mins % 60;
-        minutes = String.valueOf(mins);
-        if (mins == 0) {
-            minutes = "00";
-        }
-        if (mins < 10 && mins > 0) {
-            minutes = "0" + minutes;
-        }
-
-    	/* Convert the hours to String and format the String */
-
-        hours = String.valueOf(hrs);
-        if (hrs == 0) {
-            hours = "00";
-        }
-        if (hrs < 10 && hrs > 0) {
-            hours = "0" + hours;
-        }
-
-    	/* Although we are not using milliseconds on the timer in this example
-    	 * I included the code in the event that you wanted to include it on your own
-    	 */
-        milliseconds = String.valueOf((long) time);
-        if (milliseconds.length() == 2) {
-            milliseconds = "0" + milliseconds;
-        }
-        if (milliseconds.length() <= 1) {
-            milliseconds = "00";
-        }
-        milliseconds = milliseconds.substring(milliseconds.length() - 3, milliseconds.length() - 2);
-
-		/* Setting the timer text to the elapsed time */
-        ((TextView) findViewById(R.id.timer)).setVisibility(View.VISIBLE);
-        ((TextView) findViewById(R.id.timer)).setText(hours + ":" + minutes);
-    }
 }
