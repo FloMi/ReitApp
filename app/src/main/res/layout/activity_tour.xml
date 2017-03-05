@@ -18,12 +18,14 @@
         android:id="@+id/tourList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/tour_progress"
-        android:layout_alignParentEnd="true"
-        android:dividerHeight="2dp"
-        android:headerDividersEnabled="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
         android:background="@color/white"
+        android:clipToPadding="false"
+        android:divider="@color/white"
+        android:dividerHeight="2dp"
         android:footerDividersEnabled="true"
-        android:divider="@android:color/background_light"
-        android:clipToPadding="false"/>
+        android:headerDividersEnabled="true"
+        android:padding="10dp"
+        android:scrollbars="none" />
 </RelativeLayout>

@@ -102,6 +102,13 @@ MapActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
+        if(FirebaseAuth.getInstance().getCurrentUser()==null)
+        {
+            Intent intent = new Intent(this, LoginActivity.class);
+            finish();
+            startActivity(intent);
+        }
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);

@@ -213,6 +213,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void onClickOpenMap() {
         Intent map = new Intent(this, MapActivity.class);
         startActivity(map);
+        finish();
     }
     private void onClickRegister() {
         Intent register = new Intent(this, RegisterActivity.class);
@@ -367,6 +368,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             if (mAuthTask.getStatus() == AsyncTask.Status.RUNNING)
                 mAuthTask.cancel(true);
         }
+        if(mAuth.getCurrentUser()!=null)
+            mAuth.signOut();
+        recreate();
     }
 
     @Override
