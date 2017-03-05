@@ -24,5 +24,6 @@
         android:headerDividersEnabled="true"
         android:background="@color/white"
         android:footerDividersEnabled="true"
-        android:divider="@android:color/background_light"/>
+        android:divider="@android:color/background_light"
+        android:clipToPadding="false"/>
 </RelativeLayout>
