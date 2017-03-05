@@ -45,7 +45,7 @@ public class Timer {
     }
 
     private void hideTimer() {
-        ((TextView) activity.findViewById(R.id.timer)).setVisibility(View.INVISIBLE);
+         activity.findViewById(R.id.timer).setVisibility(View.INVISIBLE);
     }
 
     public void startClick() {
@@ -63,7 +63,7 @@ public class Timer {
         secs = 0;
         mins = 0;
         hrs = 0;
-        ((TextView) activity.findViewById(R.id.timer)).setText("00:00:00");
+        ((TextView) activity.findViewById(R.id.timer)).setText("00:00");
     }
 
     private void updateTimer(long time) {
@@ -105,23 +105,10 @@ public class Timer {
             hours = "0" + hours;
         }
 
-    	/* Although we are not using milliseconds on the timer in this example
-    	 * I included the code in the event that you wanted to include it on your own
-    	 */
-        milliseconds = String.valueOf((long) time);
-        if (milliseconds.length() == 2) {
-            milliseconds = "0" + milliseconds;
-        }
-        if (milliseconds.length() <= 1) {
-            milliseconds = "00";
-        }
-        milliseconds = milliseconds.substring(milliseconds.length() - 3, milliseconds.length() - 2);
-
-
-
 		/* Setting the timer text to the elapsed time */
-        ((TextView) activity.findViewById(R.id.timer)).setVisibility(View.VISIBLE);
-        ((TextView) activity.findViewById(R.id.timer)).setText(hours + ":" + minutes);
-    }
 
+
+            ((TextView)activity.findViewById(R.id.timer)).setText(hours + ":" + minutes);
+
+    }
 }
