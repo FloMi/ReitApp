@@ -34,6 +34,8 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.appindexing.FirebaseUserActions;
+import com.google.firebase.appindexing.builders.Actions;
 import com.google.firebase.appindexing.builders.PersonBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -51,6 +53,10 @@ import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.compass.CompassOverlay;
+import org.osmdroid.views.overlay.compass.IOrientationConsumer;
+import org.osmdroid.views.overlay.compass.IOrientationProvider;
+import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -100,6 +106,7 @@ MapActivity extends Activity {
     private Timer timer;
     private String routName = "nan";
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -118,6 +125,9 @@ MapActivity extends Activity {
         InitAttraction();
         SetMap();
         checkIfAdminLoggedIn();
+
+        //OrientationProvider o = new OrientationProvider(this);
+        //  o.getOrientation();
 
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);
         distanceleft = (TextView) findViewById(R.id.distanceleft);
@@ -259,6 +269,8 @@ MapActivity extends Activity {
 
         currentLocationMarker = new Marker(map);
         currentLocationMarker.setIcon(ContextCompat.getDrawable(this,R.drawable.ic_brightness_1_black_24dp));
+
+
     }
 
     private void checkIfAdminLoggedIn() {
@@ -289,7 +301,7 @@ MapActivity extends Activity {
         builder.setView(input);
 
         // Set up the buttons
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Speichern", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
@@ -310,13 +322,12 @@ MapActivity extends Activity {
 
                 kmlDocument.saveAsKML(file);
                 recordingStarted = false;
-
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
         });
 
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Weiter", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
@@ -325,6 +336,14 @@ MapActivity extends Activity {
             }
         });
 
+        builder.setNeutralButton("Löschen", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            dialog.cancel();
+            recordingStarted = false;
+            startRecord.setImageResource(R.drawable.ic_action_name);
+        }
+    });
         builder.show();
 
 
@@ -404,6 +423,8 @@ MapActivity extends Activity {
     }
 
     public void displayMyCurrentLocationOverlay(double lat,double longi) {
+
+
 
         GeoPoint Location = new GeoPoint(lat,longi);
 
@@ -764,11 +785,16 @@ MapActivity extends Activity {
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client.connect();
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        FirebaseUserActions.getInstance().start(getIndexApiAction0());
     }
 
     @Override
     public void onStop() {
-        super.onStop();
+        super.onStop();// ATTENTION: This was auto-generated to implement the App Indexing API.
+// See https://g.co/AppIndexing/AndroidStudio for more information.
+        FirebaseUserActions.getInstance().end(getIndexApiAction0());
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -909,5 +935,13 @@ MapActivity extends Activity {
                 Toast.makeText(MapActivity.this, "Fehler beim Übertragen einer Statistik", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public com.google.firebase.appindexing.Action getIndexApiAction0() {
+        return Actions.newView("Map", "http://[ENTER-YOUR-URL-HERE]");
     }
 }
