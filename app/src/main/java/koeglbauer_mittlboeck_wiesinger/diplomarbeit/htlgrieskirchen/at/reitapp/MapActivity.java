@@ -869,6 +869,15 @@ MapActivity extends Activity {
                 .push().setValue(id);
     }
 
+    public void addVisitedPlace(final int id) {
+        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        database.child("Users")
+                .child(user.getUid())
+                .child("whichPlacesVisited")
+                .push().setValue(id);
+    }
+
 
     //Timer
 

@@ -3,6 +3,9 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -129,16 +132,36 @@ public class SettingsActivity extends AppCompatActivity {
         if (cancel) {
             focusView.requestFocus();
         } else {
+            showProgress(true);
             FirebaseAuth.getInstance().getCurrentUser().updatePassword(password).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
+                    showProgress(false);
                     if(!task.isSuccessful())
                     {
-                        Toast.makeText(SettingsActivity.this, "Fehler bei Passwort Änderung. Bitte loggen Sie sich erneut ein.", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(SettingsActivity.this, "Fehler bei Passwort Änderung. Bitte loggen Sie sich erneut ein.", Toast.LENGTH_SHORT).show();
+                        new AlertDialog.Builder(SettingsActivity.this)
+                                .setTitle("Passwort Änderung Fehlgeschlagen")
+                                .setMessage("Bitten loggen Sie sich erneut ein, um das Passwort ändern zu können.")
+                                .setPositiveButton("Ausloggen", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        FirebaseAuth.getInstance().signOut();
+                                        Toast.makeText(SettingsActivity.this, R.string.loggedout_toast, Toast.LENGTH_LONG).show();
+                                        Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                                        finish();
+                                        startActivity(intent);
+                                    }
+                                })
+                                .setNegativeButton("Zurück", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // do nothing
+                                    }
+                                })
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
                     }
                 }
             });
-            Toast.makeText(this, "Passwort geändert", Toast.LENGTH_SHORT).show();
             mPasswordConfirmationView.setText("");
             mPasswordView.setText("");
         }

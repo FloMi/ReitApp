@@ -32,8 +32,8 @@ public class MainMenuActivity extends AppCompatActivity {
         FirebaseAuth.getInstance().signOut();
         Toast.makeText(this, R.string.loggedout_toast, Toast.LENGTH_LONG).show();
         Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
         finish();
+        startActivity(intent);
     }
     public void onClickTour(View view){
         Intent intent = new Intent(this, TourActivity.class);
