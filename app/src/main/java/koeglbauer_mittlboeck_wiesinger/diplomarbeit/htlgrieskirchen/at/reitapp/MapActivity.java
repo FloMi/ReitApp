@@ -1,11 +1,8 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
-import android.animation.ArgbEvaluator;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,17 +12,13 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.text.InputType;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +29,6 @@ import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.Actions;
-import com.google.firebase.appindexing.builders.PersonBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,7 +37,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -53,21 +44,10 @@ import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.views.overlay.compass.CompassOverlay;
-import org.osmdroid.views.overlay.compass.IOrientationConsumer;
-import org.osmdroid.views.overlay.compass.IOrientationProvider;
-import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -148,7 +128,7 @@ MapActivity extends Activity {
             public void onClick(View v) {
 
                 if (recordingStarted) {
-                    exportToKml();
+                    exportToDatabase();
                 } else {
                     recordingStarted = true;
                     startRecord.setImageResource(R.drawable.ic_save);
@@ -289,7 +269,7 @@ MapActivity extends Activity {
     }
 
 
-    private void exportToKml() {
+    private void exportToDatabase() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Title");
@@ -305,22 +285,30 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                File file;
-                String s = input.getText().toString();
-                Calendar c = Calendar.getInstance();
-                SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+                final int[] amountOftours = {0};
 
-                KmlDocument kmlDocument = new KmlDocument();
+                mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                            amountOftours[0]++;
+                        }
+                    }
 
-                kmlDocument.mKmlRoot.addOverlay(CoverdTrack, kmlDocument);
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-                String root = Environment.getExternalStorageDirectory().toString();
-                File myDir = new File(root + "/saved_routs");
-                myDir.mkdirs();
 
-                file = new File(myDir, s + ".kml");
+                final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+                final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-                kmlDocument.saveAsKML(file);
+                Path p = new Path(CoverdTrack.getPoints(),routName,(int) calcDistanceOfRout(CoverdTrack.getPoints()));
+
+                database.child("Paths").child(amountOftours[0]+1+"").setValue(p);
+
                 recordingStarted = false;
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
@@ -891,8 +879,6 @@ MapActivity extends Activity {
                 .child("whichTourFinished")
                 .push().setValue(id);
     }
-    
-    //Timer
 
     public void addRangeToday(final double range) {
         final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
