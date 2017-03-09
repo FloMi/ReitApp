@@ -15,17 +15,6 @@
         android:src="@mipmap/icon"
         android:layout_weight="0"/>
 
-    <TextView
-        android:text="10"
-        android:layout_height="match_parent"
-        android:id="@+id/tourListNumberView"
-        android:layout_weight="0"
-        android:textAppearance="@android:style/TextAppearance.Material.Large"
-        android:textSize="32sp"
-        android:gravity="center"
-        android:layout_width="40dp"
-        android:textColor="@color/white" />
-
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="fill_parent"

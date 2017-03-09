@@ -34,14 +34,12 @@ public class TourListAdapter extends ArrayAdapter<String> {
         TextView txtTitle = (TextView) rowView.findViewById(R.id.tourListNameView);
         ImageView imageView = (ImageView) rowView.findViewById(R.id.tourListImageView);
         TextView txtDescription = (TextView) rowView.findViewById(R.id.tourListRangeView);
-        TextView txtNumber = (TextView) rowView.findViewById(R.id.tourListNumberView);
         View layout=rowView.findViewById(R.id.tourListLayoutView);
 
         layout.setBackgroundResource(backgroundid[position]);
         txtTitle.setText(itemname[position]);
         imageView.setImageResource(imgid[position]);
         txtDescription.setText(itemdesc[position]);
-        txtNumber.setText(itemnumb[position]);
 
         return rowView;
     };
