@@ -532,7 +532,7 @@ MapActivity extends Activity {
                 loc2.setLongitude(currentLocation.getLongitude());
 
                 if (loc1.distanceTo(loc2) <= 15) {
-                    addFinishedTour(routID);
+                    addFinishedTour(valueOf(routID));
                 }
             }
         }
@@ -883,7 +883,7 @@ MapActivity extends Activity {
         });
     }
 
-    public void addFinishedTour(final String id) {
+    public void addFinishedTour(final int id) {
         final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         database.child("Users")
