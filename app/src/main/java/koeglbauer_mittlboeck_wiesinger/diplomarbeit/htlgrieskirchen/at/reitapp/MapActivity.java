@@ -70,7 +70,6 @@ MapActivity extends Activity {
     Marker currentLocationMarker;
     Polyline CoverdTrack;
     List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
-    List<GeoPoint> DatabaseCoordinates1 = new ArrayList<>();
 
     Polyline mainPolyline = new Polyline();
     FloatingActionButton startRecord;
@@ -81,7 +80,7 @@ MapActivity extends Activity {
     private MapController mMapController;
     private GoogleApiClient client;
 
-    //private boolean navigationStarted = false;
+    private boolean navigationStarted = false;
     private boolean recordingStarted = false;
 
     private boolean centerMap = true;
@@ -133,12 +132,13 @@ MapActivity extends Activity {
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                if (recordingStarted) {
+                if (pref.getBoolean("recordingStarted",false)) {
                     exportToDatabase();
                 } else {
-                    recordingStarted = true;
+
                     startRecord.setImageResource(R.drawable.ic_save);
                 }
+                pref.edit().putBoolean("recordingStarted",!pref.getBoolean("recordingStarted",false));
             }
         });
 
@@ -170,6 +170,8 @@ MapActivity extends Activity {
 
                 timer = new Timer(getActivity());
 
+                boolean seas = pref.getBoolean("navigationStarted", false);
+
                 if (pref.getBoolean("navigationStarted", false)) {
                     startNav.setImageResource(R.drawable.ic_navigation_arrow);
 
@@ -182,24 +184,24 @@ MapActivity extends Activity {
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
-
+                    pref.edit().putBoolean("navigationStarted", false);
 
                 } else {
-                    startNavigation();
+                    InitTourList();
                     startNav.setImageResource(R.drawable.ic_stopnav);
                     timer.resetClick();
                     timer.startClick();
                     findViewById(R.id.timer).setVisibility(View.VISIBLE);
                     currenttour.setVisibility(View.VISIBLE);
                     distanceofrout.setVisibility(View.VISIBLE);
+                    pref.edit().putBoolean("navigationStarted", true);
                 }
 
-                pref.edit().putBoolean("navigationStarted", !pref.getBoolean("navigationStarted",false));
-
+                seas = pref.getBoolean("navigationStarted", false);
             }
         });
 
-        routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        routID = "-KeoS9To_D6gjV3Gmozj:seas";//intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
 
         Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.slide_down);
@@ -217,7 +219,7 @@ MapActivity extends Activity {
 
             String[] s = routID.split(":");
 
-            routID = (valueOf(s[0])) + "";
+            routID = s[0] + "";
             routName = s[1];
 
 
@@ -288,12 +290,27 @@ MapActivity extends Activity {
 
                 final int[] amountOftours = {0};
 
-                mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
+                mDatabase.child("Paths").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                            amountOftours[0]++;
+
+                        amountOftours[0] = (int)dataSnapshot.getChildrenCount();
+
+
+                        List<Coordinate> g = new ArrayList<>();
+
+                        for (GeoPoint i : CoverdTrack.getPoints())
+                        {
+
+                            Coordinate c = new Coordinate(i.getLatitude(),i.getLongitude());
+                            g.add(c);
+
                         }
+
+                        Path p = new Path(g,input.getText().toString(),(int) calcDistanceOfRout(CoverdTrack.getPoints()));
+
+                        mDatabase.child("Paths").push().setValue(p);
+
                     }
 
                     @Override
@@ -302,15 +319,7 @@ MapActivity extends Activity {
                     }
                 });
 
-
-                final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
-                final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-                Path p = new Path(CoverdTrack.getPoints(), routName, (int) calcDistanceOfRout(CoverdTrack.getPoints()));
-
-                database.child("Paths").child(amountOftours[0] + 1 + "").setValue(p);
-
-                recordingStarted = false;
+                pref.edit().putBoolean("recordingStarted",false);
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
@@ -320,7 +329,8 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                recordingStarted = true;
+                pref.edit().putBoolean("recordingStarted",true);
+
                 startRecord.setImageResource(R.drawable.ic_save);
             }
         });
@@ -329,7 +339,8 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                recordingStarted = false;
+                pref.edit().putBoolean("recordingStarted",false);
+
                 startRecord.setImageResource(R.drawable.ic_action_name);
             }
         });
@@ -344,26 +355,23 @@ MapActivity extends Activity {
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                int tourString;
+                String tourString;
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                    tourString = valueOf(postSnapshot.getKey());
+                    tourString = postSnapshot.getKey().toString();
 
-                    if (tourString == valueOf(routID)) {
+                    if (tourString == routID) {
                         postSnapshot.child("Coordinates").getChildren();
 
                         for (DataSnapshot ps : postSnapshot.child("Coordinates").getChildren()) {
-                            Double l = Double.parseDouble(ps.child("geoLength").getValue().toString());
-                            Double w = Double.parseDouble(ps.child("geoWidth").getValue().toString());
+                            Double l = Double.parseDouble(ps.child("latitude").getValue().toString());
+                            Double w = Double.parseDouble(ps.child("longitude").getValue().toString());
 
                             GeoPoint g = new GeoPoint(w, l);
                             DatabaseCoordinates.add(g);
-                            DatabaseCoordinates1.add(g);
-
                         }
                     }
                 }
                 drawPath();
-                //DatabaseCoordinates = Collections.unmodifiableList(DatabaseCoordinates);
             }
 
             @Override
@@ -380,8 +388,10 @@ MapActivity extends Activity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
 
-                    PointOfInterest p = new PointOfInterest(valueOf(postSnapshot.getKey()), Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()), postSnapshot.child("Name").getValue().toString());
-                    pointOfInterests.add(p);
+
+                        PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()),Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()),postSnapshot.child("Name").getValue().toString());
+                        pointOfInterests.add(p);
+
                 }
 
                 for (PointOfInterest i : pointOfInterests) {
@@ -542,39 +552,41 @@ MapActivity extends Activity {
         return distanceInMeters;
     }
 
-    public void startRecordingHike(List<GeoPoint> MovedDistance) {
-
-        pref.edit().putBoolean("navigationStarted", true);
+    public void startRecordingHike() {
 
         SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
 
-        List<GeoPoint> movedDistance = new ArrayList<>();
-
-        Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
-
-        while(cursor.moveToNext())
-        {
-            movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
-        }
-
-        cursor.close();
-        db.close();
-
-        Polyline l = new Polyline();
-        l.setColor(Color.argb(255, 138, 152, 31));
-        l.setWidth(20);
-
-        l.setPoints(movedDistance);
-
-        map.getOverlays().remove(l);
-        CoverdTrack = l;
-        map.getOverlays().add(CoverdTrack);
-        map.invalidate();
+            pref.edit().putBoolean("navigationStarted", true);
 
 
-        if (pref.getBoolean("navigationStarted", false)) {
-            MovedDistance.clear();
-        }
+            List<GeoPoint> movedDistance = new ArrayList<>();
+
+            Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+
+            while(cursor.moveToNext())
+            {
+                movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
+            }
+
+            cursor.close();
+            db.close();
+
+            Polyline l = new Polyline();
+            l.setColor(Color.argb(255, 138, 152, 31));
+            l.setWidth(20);
+
+            l.setPoints(movedDistance);
+
+            map.getOverlays().remove(l);
+            CoverdTrack = l;
+            map.getOverlays().add(CoverdTrack);
+            map.invalidate();
+
+
+            if (pref.getBoolean("navigationStarted", false)) {
+                MovedDistance.clear();
+            }
+
     }
 
     private String GetDistanceString(Double distance) {
@@ -629,11 +641,6 @@ MapActivity extends Activity {
 
         InitTourList();
 
-        if (pref.getBoolean("navigationStarted", false)) {
-            pref.edit().putBoolean("navigationStarted", false);
-        } else {
-            pref.edit().putBoolean("navigationStarted", true);
-        }
     }
 
     private void openUserActivity() {
@@ -818,16 +825,15 @@ MapActivity extends Activity {
     }
 
     public void addStatistic(final String stats) {
-        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child(stats).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 int stat = Integer.parseInt(dataSnapshot.getValue().toString());
                 stat++;
-                database.child("Users").child(user.getUid()).child(stats).setValue(stat);
+                mDatabase.child("Users").child(user.getUid()).child(stats).setValue(stat);
             }
 
             @Override
@@ -838,9 +844,8 @@ MapActivity extends Activity {
     }
 
     public void addFinishedTour(final int id) {
-        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child("whichTourFinished")
                 .push().setValue(id);
@@ -852,7 +857,7 @@ MapActivity extends Activity {
         final Date today = new Date();
         final SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
 
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child("rangePerDay").child(f.format(today)).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -863,7 +868,7 @@ MapActivity extends Activity {
                 else
                     rangeNow = 0.0;
                 rangeNow += range;
-                database.child("Users").child(user.getUid()).child("rangePerDay").child(f.format(today)).setValue(rangeNow);
+                mDatabase.child("Users").child(user.getUid()).child("rangePerDay").child(f.format(today)).setValue(rangeNow);
             }
 
             @Override
@@ -878,7 +883,7 @@ MapActivity extends Activity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 double stat = Double.parseDouble(dataSnapshot.getValue().toString());
-                stat += range;
+                stat+=range;
                 database.child("Users").child(user.getUid()).child("range").setValue(stat);
             }
 

@@ -33,8 +33,8 @@ public class LocationReceiver extends BroadcastReceiver {
         double s = intent.getDoubleExtra("currentloclong",-1.0);
 
         activity.displayMyCurrentLocationOverlay(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
-        //activity.calcWayToGoal(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
-        activity.startRecordingHike(MovedDistance);
+        activity.calcWayToGoal();
+        //activity.startRecordingHike();
         activity.gotOffCourse(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
         activity.checkIfTourFinished();
     }
