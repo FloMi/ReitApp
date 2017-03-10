@@ -4,6 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import org.osmdroid.util.GeoPoint;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by FlorianM on 28.02.2017.
  */
@@ -11,6 +16,7 @@ import android.content.Intent;
 public class LocationReceiver extends BroadcastReceiver {
     private Context context;
     private MapActivity activity;
+    List<GeoPoint> MovedDistance = new ArrayList<>();
 
     public LocationReceiver(Context context) {
         this.context = context;
@@ -27,8 +33,8 @@ public class LocationReceiver extends BroadcastReceiver {
         double s = intent.getDoubleExtra("currentloclong",-1.0);
 
         activity.displayMyCurrentLocationOverlay(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
-        activity.calcWayToGoal();
-        activity.startRecordingHike(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0),intent.getStringExtra("currentlocProvider"));
+        //activity.calcWayToGoal(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
+        activity.startRecordingHike(MovedDistance);
         activity.gotOffCourse(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
         activity.checkIfTourFinished();
     }

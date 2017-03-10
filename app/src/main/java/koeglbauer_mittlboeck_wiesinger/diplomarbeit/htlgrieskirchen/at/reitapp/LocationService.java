@@ -2,15 +2,19 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -71,8 +75,8 @@ public class LocationService extends Service {
             // for ActivityCompat#requestPermissions for more details.
             return START_STICKY;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4000, 0, (LocationListener) listener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, listener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4000, 10, (LocationListener) listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 10, listener);
 
         return START_STICKY;
     }
@@ -171,9 +175,12 @@ public class LocationService extends Service {
     public class MyLocationListener implements LocationListener
     {
         private MapActivity mapActivity;
+        private SharedPreferences pref;
 
         public void onLocationChanged(final Location loc)
         {
+            pref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
             if(isBetterLocation(loc, previousBestLocation)) {
                 loc.getLatitude();
                 loc.getLongitude();
@@ -199,9 +206,21 @@ public class LocationService extends Service {
                // mapActivity.startRecordingHike(currentLocation,s);
                // mapActivity.gotOffCourse(currentLocation);
 
+                if (pref.getBoolean("navigationStarted", false)) {
+
+                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
+                    ContentValues contentValues  = new ContentValues();
+
+                    contentValues.put(TablePoints.Latitude, currentLocation.getLatitude());
+                    contentValues.put(TablePoints.Longitude, currentLocation.getLongitude());
+
+                    db.insert(TablePoints.TABLE_NAME, null, contentValues);
+
+                    db.close();
+
+                }
 
                 sendBroadcast(intent);
-
             }
         }
 
