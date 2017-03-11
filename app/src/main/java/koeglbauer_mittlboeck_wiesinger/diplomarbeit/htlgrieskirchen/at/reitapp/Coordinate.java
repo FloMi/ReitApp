@@ -5,16 +5,32 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
  */
 
 public class Coordinate {
-    public String geoLength;
-    public String geoWidth;
+    public double latitude;
+    public double longitude;
 
     public Coordinate()
     {
     }
 
-    public Coordinate(String referenceSystem, String geoLength, String geoWidth, String eastingUTM, String northingUTM, int zone)
+    public Coordinate(double latitude, double longitude)
     {
-        this.geoLength = geoLength;
-        this.geoWidth = geoWidth;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 }

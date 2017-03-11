@@ -2,6 +2,7 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import org.osmdroid.util.GeoPoint;
 
+import java.security.PublicKey;
 import java.util.List;
 
 /**
@@ -10,40 +11,40 @@ import java.util.List;
 
 public class Path {
 
-    List<GeoPoint> whichTourFinished;
-    String name;
-    int range;
+    private List<Coordinate> Coordinates;
+    private String Name;
+    private int Range;
 
-    public Path(List<GeoPoint> whichTourFinished, String name, int range) {
-        this.whichTourFinished = whichTourFinished;
-        this.name = name;
-        this.range = range;
+    public Path(List<Coordinate> Coordinates, String Name, int Range) {
+        this.Coordinates = Coordinates;
+        this.Name = Name;
+        this.Range = Range;
     }
 
     public Path() {
     }
 
-    public List<GeoPoint> getWhichTourFinished() {
-        return whichTourFinished;
+    public List<Coordinate> getCoordinates() {
+        return Coordinates;
     }
 
-    public void setWhichTourFinished(List<GeoPoint> whichTourFinished) {
-        this.whichTourFinished = whichTourFinished;
+    public void setCoordinates(List<Coordinate> coordinates) {
+        Coordinates = coordinates;
     }
 
     public String getName() {
-        return name;
+        return Name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        Name = name;
     }
 
     public int getRange() {
-        return range;
+        return Range;
     }
 
     public void setRange(int range) {
-        this.range = range;
+        Range = range;
     }
 }

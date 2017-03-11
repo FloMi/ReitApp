@@ -1,31 +1,29 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
 import android.Manifest;
-import android.animation.ArgbEvaluator;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.SharedPreferencesCompat;
 import android.text.InputType;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +34,6 @@ import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.Actions;
-import com.google.firebase.appindexing.builders.PersonBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,7 +42,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -53,21 +49,10 @@ import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.views.overlay.compass.CompassOverlay;
-import org.osmdroid.views.overlay.compass.IOrientationConsumer;
-import org.osmdroid.views.overlay.compass.IOrientationProvider;
-import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -85,7 +70,6 @@ MapActivity extends Activity {
     Marker currentLocationMarker;
     Polyline CoverdTrack;
     List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
-    List<GeoPoint> DatabaseCoordinates1 = new ArrayList<>();
 
     Polyline mainPolyline = new Polyline();
     FloatingActionButton startRecord;
@@ -95,8 +79,10 @@ MapActivity extends Activity {
     private MapView map;
     private MapController mMapController;
     private GoogleApiClient client;
+
     private boolean navigationStarted = false;
     private boolean recordingStarted = false;
+
     private boolean centerMap = true;
     private boolean atStartOfRout = true;
     private DatabaseReference mDatabase;
@@ -105,7 +91,7 @@ MapActivity extends Activity {
     private LocationReceiver locationreceiver;
     private Timer timer;
     private String routName = "nan";
-
+    private SharedPreferences pref;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -113,8 +99,9 @@ MapActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        if(FirebaseAuth.getInstance().getCurrentUser()==null)
-        {
+        pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             finish();
             startActivity(intent);
@@ -138,8 +125,6 @@ MapActivity extends Activity {
         final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
 
 
-
-
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
         }
@@ -147,12 +132,13 @@ MapActivity extends Activity {
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                if (recordingStarted) {
-                    exportToKml();
+                if (pref.getBoolean("recordingStarted",false)) {
+                    exportToDatabase();
                 } else {
-                    recordingStarted = true;
+
                     startRecord.setImageResource(R.drawable.ic_save);
                 }
+                pref.edit().putBoolean("recordingStarted",!pref.getBoolean("recordingStarted",false));
             }
         });
 
@@ -184,9 +170,10 @@ MapActivity extends Activity {
 
                 timer = new Timer(getActivity());
 
-                if (navigationStarted) {
+                boolean seas = pref.getBoolean("navigationStarted", false);
+
+                if (pref.getBoolean("navigationStarted", false)) {
                     startNav.setImageResource(R.drawable.ic_navigation_arrow);
-                    navigationStarted = false;
 
                     distanceleft.setText("");
 
@@ -197,25 +184,24 @@ MapActivity extends Activity {
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
-
+                    pref.edit().putBoolean("navigationStarted", false);
 
                 } else {
-                    startNavigation();
+                    InitTourList();
                     startNav.setImageResource(R.drawable.ic_stopnav);
                     timer.resetClick();
                     timer.startClick();
                     findViewById(R.id.timer).setVisibility(View.VISIBLE);
                     currenttour.setVisibility(View.VISIBLE);
                     distanceofrout.setVisibility(View.VISIBLE);
-                    navigationStarted = true;
-
+                    pref.edit().putBoolean("navigationStarted", true);
                 }
 
-
+                seas = pref.getBoolean("navigationStarted", false);
             }
         });
 
-        routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        routID = "-KeoS9To_D6gjV3Gmozj:seas";//intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
 
         Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.slide_down);
@@ -233,7 +219,7 @@ MapActivity extends Activity {
 
             String[] s = routID.split(":");
 
-            routID = (valueOf(s[0])) + "";
+            routID = s[0] + "";
             routName = s[1];
 
 
@@ -253,14 +239,13 @@ MapActivity extends Activity {
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
 
 
-
         map.setBuiltInZoomControls(false);
 
 
         locationreceiver = new LocationReceiver(this);
         Intent i = new Intent(this, LocationService.class);
         IntentFilter fi = new IntentFilter("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
-        registerReceiver(locationreceiver,fi);
+        registerReceiver(locationreceiver, fi);
 
 
         startService(i);
@@ -268,7 +253,7 @@ MapActivity extends Activity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
-        currentLocationMarker.setIcon(ContextCompat.getDrawable(this,R.drawable.ic_brightness_1_black_24dp));
+        currentLocationMarker.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_brightness_1_black_24dp));
 
 
     }
@@ -277,19 +262,17 @@ MapActivity extends Activity {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        if (user.getEmail().equals("florian.mittlboeck25@gmail.com"))
-        {
+        if (user.getEmail().equals("florian.mittlboeck25@gmail.com")) {
             findViewById(R.id.startrecording).setVisibility(View.VISIBLE);
         }
     }
 
-    private MapActivity getActivity()
-    {
+    private MapActivity getActivity() {
         return this;
     }
 
 
-    private void exportToKml() {
+    private void exportToDatabase() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Title");
@@ -305,23 +288,38 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                File file;
-                String s = input.getText().toString();
-                Calendar c = Calendar.getInstance();
-                SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+                final int[] amountOftours = {0};
 
-                KmlDocument kmlDocument = new KmlDocument();
+                mDatabase.child("Paths").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
 
-                kmlDocument.mKmlRoot.addOverlay(CoverdTrack, kmlDocument);
+                        amountOftours[0] = (int)dataSnapshot.getChildrenCount();
 
-                String root = Environment.getExternalStorageDirectory().toString();
-                File myDir = new File(root + "/saved_routs");
-                myDir.mkdirs();
 
-                file = new File(myDir, s + ".kml");
+                        List<Coordinate> g = new ArrayList<>();
 
-                kmlDocument.saveAsKML(file);
-                recordingStarted = false;
+                        for (GeoPoint i : CoverdTrack.getPoints())
+                        {
+
+                            Coordinate c = new Coordinate(i.getLatitude(),i.getLongitude());
+                            g.add(c);
+
+                        }
+
+                        Path p = new Path(g,input.getText().toString(),(int) calcDistanceOfRout(CoverdTrack.getPoints()));
+
+                        mDatabase.child("Paths").push().setValue(p);
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                pref.edit().putBoolean("recordingStarted",false);
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
@@ -331,19 +329,21 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                recordingStarted = true;
+                pref.edit().putBoolean("recordingStarted",true);
+
                 startRecord.setImageResource(R.drawable.ic_save);
             }
         });
 
         builder.setNeutralButton("Löschen", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            dialog.cancel();
-            recordingStarted = false;
-            startRecord.setImageResource(R.drawable.ic_action_name);
-        }
-    });
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+                pref.edit().putBoolean("recordingStarted",false);
+
+                startRecord.setImageResource(R.drawable.ic_action_name);
+            }
+        });
         builder.show();
 
 
@@ -355,29 +355,25 @@ MapActivity extends Activity {
         mDatabase.child("Paths").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                int tourString;
+                String tourString;
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                    tourString = valueOf(postSnapshot.getKey());
+                    tourString = postSnapshot.getKey().toString();
 
-                    if (tourString == valueOf(routID))
-                    {
+                    if (tourString == routID) {
                         postSnapshot.child("Coordinates").getChildren();
 
                         for (DataSnapshot ps : postSnapshot.child("Coordinates").getChildren()) {
-                            Double l = Double.parseDouble(ps.child("geoLength").getValue().toString());
-                            Double w = Double.parseDouble(ps.child("geoWidth").getValue().toString());
+                            Double l = Double.parseDouble(ps.child("latitude").getValue().toString());
+                            Double w = Double.parseDouble(ps.child("longitude").getValue().toString());
 
                             GeoPoint g = new GeoPoint(w, l);
                             DatabaseCoordinates.add(g);
-                            DatabaseCoordinates1.add(g);
-
                         }
-
                     }
                 }
                 drawPath();
-                //DatabaseCoordinates = Collections.unmodifiableList(DatabaseCoordinates);
             }
+
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
@@ -392,28 +388,30 @@ MapActivity extends Activity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
 
-                    PointOfInterest p = new PointOfInterest(valueOf(postSnapshot.getKey()), Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()),Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()),postSnapshot.child("Name").getValue().toString());
-                    pointOfInterests.add(p);
+
+                        PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()),Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()),postSnapshot.child("Name").getValue().toString());
+                        pointOfInterests.add(p);
+
                 }
 
-                for(PointOfInterest i :pointOfInterests)
-                {
+                for (PointOfInterest i : pointOfInterests) {
                     Marker cc;
                     cc = new Marker(map);
                     map.getOverlays().add(cc);
 
                     cc.setIcon(getResources().getDrawable(R.drawable.pointofinterest));
 
-                    GeoPoint g = new GeoPoint(i.getLatitude(),i.getLongitude());
+                    GeoPoint g = new GeoPoint(i.getLatitude(), i.getLongitude());
 
                     cc.setPosition(g);
 
-                    cc.setTitle(i.getName()+"");
+                    cc.setTitle(i.getName() + "");
                     cc.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
                     map.getOverlays().add(currentLocationMarker);
                 }
 
             }
+
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
@@ -422,11 +420,10 @@ MapActivity extends Activity {
 
     }
 
-    public void displayMyCurrentLocationOverlay(double lat,double longi) {
+    public void displayMyCurrentLocationOverlay(double lat, double longi) {
 
 
-
-        GeoPoint Location = new GeoPoint(lat,longi);
+        GeoPoint Location = new GeoPoint(lat, longi);
 
         if (currentLocation == null) {
             currentLocation = Location;
@@ -449,16 +446,13 @@ MapActivity extends Activity {
         }
 
         //create instructions if nav startet and databse loaded coordinates and updates distance moved
-        if (navigationStarted && DatabaseCoordinates.size() > 0) {
+        if (pref.getBoolean("navigationStarted", false) && DatabaseCoordinates.size() > 0) {
 
             //check if at start of rout
             float d = calcDistanceFromTo(currentLocation, DatabaseCoordinates.get(0));
-            if(d<20 && d >0)
-            {
+            if (d < 20 && d > 0) {
                 atStartOfRout = true;
-            }
-            else
-            {
+            } else {
                 atStartOfRout = false;
             }
 
@@ -521,7 +515,7 @@ MapActivity extends Activity {
     }
 
     public void checkIfTourFinished() {
-        if (navigationStarted) {
+        if (pref.getBoolean("navigationStarted", false)) {
             if (Math.abs(calcDistanceOfRout(MovedDistance) - calcDistanceOfRout(DatabaseCoordinates)) < 50) {
                 Location loc1 = new Location("");
                 loc1.setLatitude(DatabaseCoordinates.get(DatabaseCoordinates.size()).getLatitude());
@@ -558,68 +552,41 @@ MapActivity extends Activity {
         return distanceInMeters;
     }
 
-    public void startRecordingHike(double lat,double longi ,String s) {
+    public void startRecordingHike() {
 
-        GeoPoint cl = new GeoPoint(lat,longi);
+        SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
 
-        if (navigationStarted) {
-            if (s.equals("gps")) {
-                if (MovedDistance.size() == 0) {
-                    //mMapController.animateTo(currentLocation);
-                    MovedDistance.add(currentLocation);
-                } else {
-                    float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size() - 1));
+            pref.edit().putBoolean("navigationStarted", true);
 
-                    if (d > (float) 5) {
 
-                        //mMapController.animateTo(currentLocation);
-                        MovedDistance.add(currentLocation);
-                    }
-                }
+            List<GeoPoint> movedDistance = new ArrayList<>();
+
+            Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+
+            while(cursor.moveToNext())
+            {
+                movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
             }
+
+            cursor.close();
+            db.close();
 
             Polyline l = new Polyline();
             l.setColor(Color.argb(255, 138, 152, 31));
             l.setWidth(20);
 
-            l.setPoints(MovedDistance);
+            l.setPoints(movedDistance);
 
             map.getOverlays().remove(l);
             CoverdTrack = l;
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
-        } else if (recordingStarted == false) {
-            MovedDistance.clear();
-        }
 
-        if (recordingStarted) {
-            if (s.equals("gps")) {
-                if (MovedDistance.size() == 0) {
-                    //mMapController.animateTo(currentLocation);
-                    MovedDistance.add(currentLocation);
-                } else {
-                    float d = currentLocation.distanceTo(MovedDistance.get(MovedDistance.size() - 1));
 
-                    if (d > (float) 1) {
-                        //mMapController.animateTo(currentLocation);
-                        MovedDistance.add(currentLocation);
-                    }
-                }
+            if (pref.getBoolean("navigationStarted", false)) {
+                MovedDistance.clear();
             }
 
-            Polyline l = new Polyline();
-            l.setColor(Color.argb(255, 138, 152, 31));
-            l.setWidth(20);
-
-            l.setPoints(MovedDistance);
-
-            map.getOverlays().remove(l);
-            CoverdTrack = l;
-            map.getOverlays().add(CoverdTrack);
-            map.invalidate();
-        } else if (navigationStarted == false) {
-            MovedDistance.clear();
-        }
     }
 
     private String GetDistanceString(Double distance) {
@@ -664,8 +631,7 @@ MapActivity extends Activity {
         }
 
         //aktuelle position anfang von route
-        if (points.get(0) != currentLocation)
-        {
+        if (points.get(0) != currentLocation) {
             points.add(0, currentLocation);
         }
         return points;
@@ -675,15 +641,10 @@ MapActivity extends Activity {
 
         InitTourList();
 
-        if (navigationStarted) {
-            navigationStarted = false;
-        } else {
-            navigationStarted = true;
-        }
     }
 
     private void openUserActivity() {
-        navigationStarted = false;
+        pref.edit().putBoolean("navigationStarted", false);
         Intent intent = new Intent(this, MainMenuActivity.class);
         startActivity(intent);
     }
@@ -724,7 +685,7 @@ MapActivity extends Activity {
     }
 
     private void crateInstructions() {
-        if (DatabaseCoordinates.size() > 0 && navigationStarted && currentLocation != null) {
+        if (DatabaseCoordinates.size() > 0 && pref.getBoolean("navigationStarted", false) && currentLocation != null) {
             //if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>0 && currentLocation.distanceTo(DatabaseCoordinates.get(0))<300)
             //{
             distanceleft.setVisibility(View.VISIBLE);
@@ -816,7 +777,7 @@ MapActivity extends Activity {
     @Override
     protected void onResume() {
         IntentFilter fi = new IntentFilter("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
-        registerReceiver(locationreceiver,fi);
+        registerReceiver(locationreceiver, fi);
         super.onResume();
     }
 
@@ -829,7 +790,7 @@ MapActivity extends Activity {
 
     public void gotOffCourse(double lat, double longi) {
 
-        GeoPoint current = new GeoPoint(lat,longi);
+        GeoPoint current = new GeoPoint(lat, longi);
 
         if (PolylineWaypoints.size() > 0) {
             float distance = 0;
@@ -864,16 +825,15 @@ MapActivity extends Activity {
     }
 
     public void addStatistic(final String stats) {
-        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child(stats).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 int stat = Integer.parseInt(dataSnapshot.getValue().toString());
                 stat++;
-                database.child("Users").child(user.getUid()).child(stats).setValue(stat);
+                mDatabase.child("Users").child(user.getUid()).child(stats).setValue(stat);
             }
 
             @Override
@@ -884,25 +844,12 @@ MapActivity extends Activity {
     }
 
     public void addFinishedTour(final int id) {
-        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child("whichTourFinished")
                 .push().setValue(id);
     }
-
-    public void addVisitedPlace(final int id) {
-        final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
-        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        database.child("Users")
-                .child(user.getUid())
-                .child("whichPlacesVisited")
-                .push().setValue(id);
-    }
-
-
-    //Timer
 
     public void addRangeToday(final double range) {
         final DatabaseReference database = FirebaseDatabase.getInstance().getReference();
@@ -910,7 +857,7 @@ MapActivity extends Activity {
         final Date today = new Date();
         final SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
 
-        database.child("Users")
+        mDatabase.child("Users")
                 .child(user.getUid())
                 .child("rangePerDay").child(f.format(today)).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -921,7 +868,7 @@ MapActivity extends Activity {
                 else
                     rangeNow = 0.0;
                 rangeNow += range;
-                database.child("Users").child(user.getUid()).child("rangePerDay").child(f.format(today)).setValue(rangeNow);
+                mDatabase.child("Users").child(user.getUid()).child("rangePerDay").child(f.format(today)).setValue(rangeNow);
             }
 
             @Override
