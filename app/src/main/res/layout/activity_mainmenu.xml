@@ -25,20 +25,20 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:text="Tour auswählen"
                 android:id="@+id/buttonTour"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
-                android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimary"
                 android:drawableTop="@mipmap/ic_map_white_48dp"
                 android:onClick="onClickTour"
+                android:paddingBottom="10dp"
                 android:paddingTop="10dp"
-                android:paddingBottom="10dp"/>
+                android:text="Tour auswählen"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse" />
         </LinearLayout>
 
         <LinearLayout
