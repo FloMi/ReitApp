@@ -85,10 +85,12 @@ public class TourActivity extends AppCompatActivity {
 
                     boolean hasFinished = false;
                     String tourNumber = postSnapshot.getKey();
-                    int tourDisplayNumber = Integer.parseInt(tourNumber);
-                    tourDisplayNumber++;
-                    itemnumb.add(tourDisplayNumber+"");
-                    tourString=postSnapshot.child("Name").getValue().toString();
+                    String tourDisplayNumber = tourNumber;
+                    itemnumb.add(tourDisplayNumber);
+                    if(postSnapshot.child("Name").getValue()==null)
+                        tourString=postSnapshot.child("name").getValue().toString();
+                    else
+                        tourString=postSnapshot.child("Name").getValue().toString();
 
                     for(DataSnapshot postSnapshot2: dataSnapshot.child("Users").child(mAuth.getCurrentUser().getUid()).child("whichTourFinished").getChildren())
                     {
@@ -110,7 +112,10 @@ public class TourActivity extends AppCompatActivity {
                     }
                     //adapter.add(tourString);
                     itemname.add(tourString);
-                    itemdesc.add(postSnapshot.child("Range").getValue().toString()+ " m");
+                    if(postSnapshot.child("Range").getValue()==null)
+                        itemdesc.add(postSnapshot.child("range").getValue().toString()+ " m");
+                    else
+                        itemdesc.add(postSnapshot.child("Range").getValue().toString()+ " m");
                     if(itemname.size()%2==0)
                         backgroundid.add(R.color.colorPrimary);
                     else
