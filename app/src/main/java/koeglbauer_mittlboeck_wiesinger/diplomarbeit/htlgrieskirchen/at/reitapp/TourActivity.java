@@ -47,7 +47,7 @@ public class TourActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = list.getItemAtPosition(position);
-                startMap(position+":"+listItem.toString());
+                startMap(listItem.toString());
             }
         });
     }

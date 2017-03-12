@@ -18,7 +18,7 @@ public class TourListAdapter extends ArrayAdapter<String> {
 
     public TourListAdapter(Activity context, String[] itemname, Integer[] imgid, String[] itemdesc, String[] itemnumb, Integer[] backgroundid)
     {
-        super(context, R.layout.tour_list, itemname);
+        super(context, R.layout.tour_list, itemnumb);
         this.context=context;
         this.itemname=itemname;
         this.imgid=imgid;
