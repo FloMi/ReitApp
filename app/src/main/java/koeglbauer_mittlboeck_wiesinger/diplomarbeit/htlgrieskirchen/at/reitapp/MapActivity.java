@@ -19,7 +19,6 @@ import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.SharedPreferencesCompat;
 import android.text.InputType;
 import android.view.View;
 import android.view.animation.Animation;
@@ -44,7 +43,6 @@ import com.google.firebase.database.ValueEventListener;
 
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.tileprovider.util.StreamUtils;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
@@ -130,16 +128,22 @@ MapActivity extends Activity {
             checkPermissions();
         }
 
+        if (DatabaseCoordinates.size() > 0) {
+            pref.edit().putBoolean("navigationStarted", false).apply();
+            clearMap();
+        }
+
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
                 if (pref.getBoolean("recordingStarted", false)) {
                     exportToDatabase();
-                } else {
 
+                } else {
+                    pref.edit().putBoolean("recordingStarted", true).apply();
                     startRecord.setImageResource(R.drawable.ic_save);
+
                 }
-                pref.edit().putBoolean("recordingStarted", !pref.getBoolean("recordingStarted", false));
             }
         });
 
@@ -169,10 +173,6 @@ MapActivity extends Activity {
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                timer = new Timer(getActivity());
-
-                boolean seas = pref.getBoolean("navigationStarted", false);
-
                 if (pref.getBoolean("navigationStarted", false)) {
                     startNav.setImageResource(R.drawable.ic_navigation_arrow);
 
@@ -180,25 +180,29 @@ MapActivity extends Activity {
 
                     clearMap();
 
+                    stopRecordingHike();
+
+                    timer = new Timer(getActivity());
                     timer.resetClick();
                     timer.stopClick();
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
-                    pref.edit().putBoolean("navigationStarted", false);
+                    pref.edit().putBoolean("navigationStarted", false).apply();
 
                 } else {
+
                     InitTourList();
+
                     startNav.setImageResource(R.drawable.ic_stopnav);
+                    timer = new Timer(getActivity());
                     timer.resetClick();
                     timer.startClick();
                     findViewById(R.id.timer).setVisibility(View.VISIBLE);
                     currenttour.setVisibility(View.VISIBLE);
                     distanceofrout.setVisibility(View.VISIBLE);
-                    pref.edit().putBoolean("navigationStarted", true);
+                    pref.edit().putBoolean("navigationStarted", true).apply();
                 }
-
-                seas = pref.getBoolean("navigationStarted", false);
             }
         });
 
@@ -253,6 +257,15 @@ MapActivity extends Activity {
 
     }
 
+    private void stopRecordingHike() {
+
+        SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
+
+        db.execSQL(TablePoints.SQL_ENPTY);
+
+
+    }
+
     private void checkIfAdminLoggedIn() {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -283,25 +296,23 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                final int[] amountOftours = {0};
 
                 mDatabase.child("Paths").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
-                        amountOftours[0] = (int) dataSnapshot.getChildrenCount();
+                        SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
 
+                        List<Coordinate> movedDistance = new ArrayList<>();
 
-                        List<Coordinate> g = new ArrayList<>();
+                        Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
-                        for (GeoPoint i : CoverdTrack.getPoints()) {
-
-                            Coordinate c = new Coordinate(i.getLongitude(),i.getLatitude());
-                            g.add(c);
-
+                        while (cursor.moveToNext()) {
+                            Coordinate c = new Coordinate(cursor.getFloat(1), cursor.getFloat(0));
+                            movedDistance.add(c);
                         }
 
-                        Path p = new Path(g, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
+                        Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
 
                         mDatabase.child("Paths").push().setValue(p);
 
@@ -313,7 +324,8 @@ MapActivity extends Activity {
                     }
                 });
 
-                pref.edit().putBoolean("recordingStarted", false);
+                pref.edit().putBoolean("recordingStarted", false).apply();
+                clearMap();
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
@@ -323,7 +335,7 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                pref.edit().putBoolean("recordingStarted", true);
+                pref.edit().putBoolean("recordingStarted", true).apply();
 
                 startRecord.setImageResource(R.drawable.ic_save);
             }
@@ -333,8 +345,8 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                pref.edit().putBoolean("recordingStarted", false);
-
+                pref.edit().putBoolean("recordingStarted", false).apply();
+                clearMap();
                 startRecord.setImageResource(R.drawable.ic_action_name);
             }
         });
@@ -371,6 +383,7 @@ MapActivity extends Activity {
                     }
                 }
                 drawPath();
+
             }
 
             @Override
@@ -441,7 +454,7 @@ MapActivity extends Activity {
 
             //check if at start of rout
             float d = calcDistanceFromTo(currentLocation, DatabaseCoordinates.get(0));
-            if (d < 20 && d > 0) {
+            if (d < 50 && d > 0) {
                 atStartOfRout = true;
             } else {
                 atStartOfRout = false;
@@ -506,11 +519,11 @@ MapActivity extends Activity {
     }
 
     public void checkIfTourFinished() {
-        if (pref.getBoolean("navigationStarted", false)) {
+        if (pref.getBoolean("navigationStarted", false) && DatabaseCoordinates.size() > 0) {
             if (Math.abs(calcDistanceOfRout(MovedDistance) - calcDistanceOfRout(DatabaseCoordinates)) < 50) {
                 Location loc1 = new Location("");
-                loc1.setLatitude(DatabaseCoordinates.get(DatabaseCoordinates.size()).getLatitude());
-                loc1.setLongitude(DatabaseCoordinates.get(DatabaseCoordinates.size()).getLongitude());
+                loc1.setLatitude(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLatitude());
+                loc1.setLongitude(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLongitude());
 
                 Location loc2 = new Location("");
                 loc2.setLatitude(currentLocation.getLatitude());
@@ -543,12 +556,9 @@ MapActivity extends Activity {
         return distanceInMeters;
     }
 
-    public void startRecordingHike() {
+    public void drawRecordedPath() {
 
         SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
-
-        pref.edit().putBoolean("navigationStarted", true);
-
 
         List<GeoPoint> movedDistance = new ArrayList<>();
 
@@ -628,7 +638,6 @@ MapActivity extends Activity {
     }
 
     private void openUserActivity() {
-        pref.edit().putBoolean("navigationStarted", false);
         Intent intent = new Intent(this, MainMenuActivity.class);
         startActivity(intent);
     }
@@ -653,8 +662,9 @@ MapActivity extends Activity {
 
     private void clearMap() {
 
-        map.getOverlays().remove(mainPolyline);
-
+        for (int i = 0; i < map.getOverlays().size() - 1; i++) {
+            map.getOverlays().remove(i);
+        }
     }
 
     private void SetMap() {
@@ -757,6 +767,10 @@ MapActivity extends Activity {
     @Override
     protected void onDestroy() {
         stopService(new Intent(MapActivity.this, LocationService.class));
+        pref.edit().putBoolean("navigationStarted", false).apply();
+        pref.edit().putBoolean("recordingStarted", false).apply();
+
+        stopRecordingHike();
         super.onDestroy();
     }
 

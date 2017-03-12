@@ -13,7 +13,7 @@ public class TablePoints {
 
 
     static final String SQL_DROP = "DROP TABLE IF EXISTS " + TABLE_NAME;
-    static final String SQL_CREATE = "CREATE TABLE" + TABLE_NAME + "(" + PointId + " INT PRIMARY KEY NOT NULL," +  Latitude + "REAL NOT NULL," + Longitude + "REAL NOT NULL)";
+    static final String SQL_CREATE = "CREATE TABLE " + TABLE_NAME + " ( " + PointId + " INTEGER PRIMARY KEY NOT NULL," +  Latitude + " REAL NOT NULL," + Longitude + " REAL NOT NULL)";
 
     static final String SQL_ENPTY = "DELETE FROM " + TABLE_NAME;
 

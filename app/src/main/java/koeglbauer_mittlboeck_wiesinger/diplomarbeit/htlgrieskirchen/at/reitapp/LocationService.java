@@ -76,7 +76,7 @@ public class LocationService extends Service {
             return START_STICKY;
         }
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4000, 0, (LocationListener) listener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 10, listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, listener);
 
         return START_STICKY;
     }
@@ -132,7 +132,9 @@ public class LocationService extends Service {
     }
 
 
-    /** Checks whether two providers are the same */
+    /**
+     * Checks whether two providers are the same
+     */
     private boolean isSameProvider(String provider1, String provider2) {
         if (provider1 == null) {
             return provider2 == null;
@@ -145,7 +147,7 @@ public class LocationService extends Service {
     public void onDestroy() {
         // handler.removeCallbacks(sendUpdatesToUI);
         super.onDestroy();
-      if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -172,16 +174,14 @@ public class LocationService extends Service {
         return t;
     }
 
-    public class MyLocationListener implements LocationListener
-    {
+    public class MyLocationListener implements LocationListener {
         private MapActivity mapActivity;
         private SharedPreferences pref;
 
-        public void onLocationChanged(final Location loc)
-        {
+        public void onLocationChanged(final Location loc) {
             pref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
-            if(isBetterLocation(loc, previousBestLocation)) {
+            if (isBetterLocation(loc, previousBestLocation)) {
                 loc.getLatitude();
                 loc.getLongitude();
                 String s = loc.getProvider();
@@ -191,53 +191,49 @@ public class LocationService extends Service {
                 //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
 
 
-
                 Intent intent = new Intent();
                 intent.setAction("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");
 
                 GeoPoint currentLocation = new GeoPoint(loc);
 
-                intent.putExtra("currentloclat",currentLocation.getLatitude());
-                intent.putExtra("currentloclong",currentLocation.getLongitude());
-                intent.putExtra("currentlocProvider",s);
+                intent.putExtra("currentloclat", currentLocation.getLatitude());
+                intent.putExtra("currentloclong", currentLocation.getLongitude());
+                intent.putExtra("currentlocProvider", s);
 
                 //mapActivity.displayMyCurrentLocationOverlay(currentLocation);
-               // mapActivity.calcWayToGoal(currentLocation);
-               // mapActivity.startRecordingHike(currentLocation,s);
-               // mapActivity.gotOffCourse(currentLocation);
+                // mapActivity.calcWayToGoal(currentLocation);
+                // mapActivity.drawRecordedPath(currentLocation,s);
+                // mapActivity.gotOffCourse(currentLocation);
+                if (s.equals("gps")) {
+                    if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false)) {
 
-                if (pref.getBoolean("navigationStarted", false)) {
+                        SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
+                        ContentValues contentValues = new ContentValues();
 
-                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
-                    ContentValues contentValues  = new ContentValues();
+                        contentValues.put(TablePoints.Latitude, currentLocation.getLatitude());
+                        contentValues.put(TablePoints.Longitude, currentLocation.getLongitude());
 
-                    contentValues.put(TablePoints.Latitude, currentLocation.getLatitude());
-                    contentValues.put(TablePoints.Longitude, currentLocation.getLongitude());
+                        db.insert(TablePoints.TABLE_NAME, null, contentValues);
 
-                    db.insert(TablePoints.TABLE_NAME, null, contentValues);
+                        db.close();
 
-                    db.close();
-
+                    }
+                    sendBroadcast(intent);
                 }
-
-                sendBroadcast(intent);
             }
         }
 
-        public void onProviderDisabled(String provider)
-        {
-            Toast.makeText( getApplicationContext(), "Gps Disabled", Toast.LENGTH_SHORT ).show();
+        public void onProviderDisabled(String provider) {
+            Toast.makeText(getApplicationContext(), "Gps Disabled", Toast.LENGTH_SHORT).show();
         }
 
 
-        public void onProviderEnabled(String provider)
-        {
-            Toast.makeText( getApplicationContext(), "Gps Enabled", Toast.LENGTH_SHORT).show();
+        public void onProviderEnabled(String provider) {
+            Toast.makeText(getApplicationContext(), "Gps Enabled", Toast.LENGTH_SHORT).show();
         }
 
 
-        public void onStatusChanged(String provider, int status, Bundle extras)
-        {
+        public void onStatusChanged(String provider, int status, Bundle extras) {
 
         }
 

@@ -56,6 +56,7 @@ public class TourActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MapActivity.class);
         intent.putExtra(EXTRA_MESSAGE, s);
         startActivity(intent);
+        finish();
     }
 
 
