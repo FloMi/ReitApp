@@ -44,6 +44,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.tileprovider.util.StreamUtils;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
@@ -132,13 +133,13 @@ MapActivity extends Activity {
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                if (pref.getBoolean("recordingStarted",false)) {
+                if (pref.getBoolean("recordingStarted", false)) {
                     exportToDatabase();
                 } else {
 
                     startRecord.setImageResource(R.drawable.ic_save);
                 }
-                pref.edit().putBoolean("recordingStarted",!pref.getBoolean("recordingStarted",false));
+                pref.edit().putBoolean("recordingStarted", !pref.getBoolean("recordingStarted", false));
             }
         });
 
@@ -201,7 +202,7 @@ MapActivity extends Activity {
             }
         });
 
-        routID = "-KeoS9To_D6gjV3Gmozj:seas";//intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
 
         Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.slide_down);
@@ -216,12 +217,6 @@ MapActivity extends Activity {
             findViewById(R.id.layout).startAnimation(slide_up);
             findViewById(R.id.startrout).setVisibility(View.VISIBLE);
             findViewById(R.id.startrout).startAnimation(slide_up);
-
-            String[] s = routID.split(":");
-
-            routID = s[0] + "";
-            routName = s[1];
-
 
             startNav.setVisibility(View.VISIBLE);
 
@@ -294,20 +289,19 @@ MapActivity extends Activity {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
-                        amountOftours[0] = (int)dataSnapshot.getChildrenCount();
+                        amountOftours[0] = (int) dataSnapshot.getChildrenCount();
 
 
                         List<Coordinate> g = new ArrayList<>();
 
-                        for (GeoPoint i : CoverdTrack.getPoints())
-                        {
+                        for (GeoPoint i : CoverdTrack.getPoints()) {
 
-                            Coordinate c = new Coordinate(i.getLatitude(),i.getLongitude());
+                            Coordinate c = new Coordinate(i.getLongitude(),i.getLatitude());
                             g.add(c);
 
                         }
 
-                        Path p = new Path(g,input.getText().toString(),(int) calcDistanceOfRout(CoverdTrack.getPoints()));
+                        Path p = new Path(g, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
 
                         mDatabase.child("Paths").push().setValue(p);
 
@@ -319,7 +313,7 @@ MapActivity extends Activity {
                     }
                 });
 
-                pref.edit().putBoolean("recordingStarted",false);
+                pref.edit().putBoolean("recordingStarted", false);
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
@@ -329,7 +323,7 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                pref.edit().putBoolean("recordingStarted",true);
+                pref.edit().putBoolean("recordingStarted", true);
 
                 startRecord.setImageResource(R.drawable.ic_save);
             }
@@ -339,7 +333,7 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                pref.edit().putBoolean("recordingStarted",false);
+                pref.edit().putBoolean("recordingStarted", false);
 
                 startRecord.setImageResource(R.drawable.ic_action_name);
             }
@@ -359,10 +353,15 @@ MapActivity extends Activity {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
                     tourString = postSnapshot.getKey().toString();
 
-                    if (tourString == routID) {
-                        postSnapshot.child("Coordinates").getChildren();
+                    if (tourString.equals(routID)) {
 
-                        for (DataSnapshot ps : postSnapshot.child("Coordinates").getChildren()) {
+                        if (postSnapshot.child("Name").getValue() == null)
+                            routName = postSnapshot.child("name").getValue().toString();
+                        else
+                            routName = postSnapshot.child("Name").getValue().toString();
+
+
+                        for (DataSnapshot ps : postSnapshot.child("coordinates").getChildren()) {
                             Double l = Double.parseDouble(ps.child("latitude").getValue().toString());
                             Double w = Double.parseDouble(ps.child("longitude").getValue().toString());
 
@@ -389,8 +388,8 @@ MapActivity extends Activity {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
 
 
-                        PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()),Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()),postSnapshot.child("Name").getValue().toString());
-                        pointOfInterests.add(p);
+                    PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()), Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()), postSnapshot.child("Name").getValue().toString());
+                    pointOfInterests.add(p);
 
                 }
 
@@ -422,16 +421,8 @@ MapActivity extends Activity {
 
     public void displayMyCurrentLocationOverlay(double lat, double longi) {
 
-
         GeoPoint Location = new GeoPoint(lat, longi);
-
-        if (currentLocation == null) {
-            currentLocation = Location;
-        } else {
-            if (calcDistanceFromTo(Location, currentLocation) > 10 && calcDistanceFromTo(Location, currentLocation) < 500) {
-                currentLocation = Location;
-            }
-        }
+        currentLocation = Location;
 
         map.getOverlays().remove(currentLocationMarker);
 
@@ -446,7 +437,7 @@ MapActivity extends Activity {
         }
 
         //create instructions if nav startet and databse loaded coordinates and updates distance moved
-        if (pref.getBoolean("navigationStarted", false) && DatabaseCoordinates.size() > 0) {
+        if (pref.getBoolean("navigationStarted", true) && DatabaseCoordinates.size() > 0) {
 
             //check if at start of rout
             float d = calcDistanceFromTo(currentLocation, DatabaseCoordinates.get(0));
@@ -556,36 +547,35 @@ MapActivity extends Activity {
 
         SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
 
-            pref.edit().putBoolean("navigationStarted", true);
+        pref.edit().putBoolean("navigationStarted", true);
 
 
-            List<GeoPoint> movedDistance = new ArrayList<>();
+        List<GeoPoint> movedDistance = new ArrayList<>();
 
-            Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+        Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
-            while(cursor.moveToNext())
-            {
-                movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
-            }
+        while (cursor.moveToNext()) {
+            movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
+        }
 
-            cursor.close();
-            db.close();
+        cursor.close();
+        db.close();
 
-            Polyline l = new Polyline();
-            l.setColor(Color.argb(255, 138, 152, 31));
-            l.setWidth(20);
+        Polyline l = new Polyline();
+        l.setColor(Color.argb(255, 138, 152, 31));
+        l.setWidth(20);
 
-            l.setPoints(movedDistance);
+        l.setPoints(movedDistance);
 
-            map.getOverlays().remove(l);
-            CoverdTrack = l;
-            map.getOverlays().add(CoverdTrack);
-            map.invalidate();
+        map.getOverlays().remove(l);
+        CoverdTrack = l;
+        map.getOverlays().add(CoverdTrack);
+        map.invalidate();
 
 
-            if (pref.getBoolean("navigationStarted", false)) {
-                MovedDistance.clear();
-            }
+        if (pref.getBoolean("navigationStarted", false)) {
+            MovedDistance.clear();
+        }
 
     }
 
@@ -637,12 +627,6 @@ MapActivity extends Activity {
         return points;
     }
 
-    private void startNavigation() {
-
-        InitTourList();
-
-    }
-
     private void openUserActivity() {
         pref.edit().putBoolean("navigationStarted", false);
         Intent intent = new Intent(this, MainMenuActivity.class);
@@ -655,7 +639,9 @@ MapActivity extends Activity {
         mainPolyline.setWidth(20);
 
         mainPolyline.setPoints(DatabaseCoordinates);
-        distanceofrout.setText(routName + " (" + GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates)) + ")");
+        String s = (routName + " (" + GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates)) + ")");
+
+        distanceofrout.setText(s);
 
         clearMap();
 
@@ -685,7 +671,7 @@ MapActivity extends Activity {
     }
 
     private void crateInstructions() {
-        if (DatabaseCoordinates.size() > 0 && pref.getBoolean("navigationStarted", false) && currentLocation != null) {
+        if (DatabaseCoordinates.size() > 0 && pref.getBoolean("navigationStarted", true) && currentLocation != null) {
             //if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>0 && currentLocation.distanceTo(DatabaseCoordinates.get(0))<300)
             //{
             distanceleft.setVisibility(View.VISIBLE);
@@ -883,7 +869,7 @@ MapActivity extends Activity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 double stat = Double.parseDouble(dataSnapshot.getValue().toString());
-                stat+=range;
+                stat += range;
                 database.child("Users").child(user.getUid()).child("range").setValue(stat);
             }
 
