@@ -86,7 +86,6 @@ MapActivity extends Activity {
     private boolean atStartOfRout = true;
     private DatabaseReference mDatabase;
     ArrayList<PointOfInterest> pointOfInterests = new ArrayList<>();
-    private String routID = "0";
     private LocationReceiver locationreceiver;
     private Timer timer;
     private String routName = "nan";
@@ -128,10 +127,12 @@ MapActivity extends Activity {
             checkPermissions();
         }
 
+        /*
         if (DatabaseCoordinates.size() > 0) {
             pref.edit().putBoolean("navigationStarted", false).apply();
             clearMap();
         }
+        */
 
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -140,6 +141,8 @@ MapActivity extends Activity {
                     exportToDatabase();
 
                 } else {
+                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+                    db.execSQL(TablePoints.SQL_CREATE);
                     pref.edit().putBoolean("recordingStarted", true).apply();
                     startRecord.setImageResource(R.drawable.ic_save);
 
@@ -170,6 +173,21 @@ MapActivity extends Activity {
             }
         });
 
+        if (pref.getBoolean("navigationStarted", false)) {
+            InitTourList();
+
+            SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+            db.execSQL(TablePoints.SQL_CREATE);
+
+            startNav.setImageResource(R.drawable.ic_stopnav);
+            timer = new Timer(getActivity());
+            timer.resetClick();
+            timer.startClick();
+            findViewById(R.id.timer).setVisibility(View.VISIBLE);
+            currenttour.setVisibility(View.VISIBLE);
+            distanceofrout.setVisibility(View.VISIBLE);
+        }
+
         startNav.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
@@ -194,6 +212,9 @@ MapActivity extends Activity {
 
                     InitTourList();
 
+                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+                    db.execSQL(TablePoints.SQL_CREATE);
+
                     startNav.setImageResource(R.drawable.ic_stopnav);
                     timer = new Timer(getActivity());
                     timer.resetClick();
@@ -206,7 +227,10 @@ MapActivity extends Activity {
             }
         });
 
-        routID = intent.getStringExtra(TourActivity.EXTRA_MESSAGE);
+        if(intent.getStringExtra(TourActivity.EXTRA_MESSAGE) != null)
+        {
+            pref.edit().putString("routID", intent.getStringExtra(TourActivity.EXTRA_MESSAGE)).apply();
+        }
 
         Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.slide_down);
@@ -214,7 +238,7 @@ MapActivity extends Activity {
         Animation slide_up = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.slide_up);
 
-        if (routID != null) {
+        if (pref.getString("routID", null) != null) {
 
             //slide up navigationLayout
             findViewById(R.id.layout).setVisibility(View.VISIBLE);
@@ -259,12 +283,12 @@ MapActivity extends Activity {
 
     private void stopRecordingHike() {
 
-        SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
-
-        db.execSQL(TablePoints.SQL_ENPTY);
-
-
-    }
+        if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false))
+        {
+            SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
+            db.execSQL(TablePoints.SQL_DROP);
+        }
+     }
 
     private void checkIfAdminLoggedIn() {
 
@@ -345,6 +369,7 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
+                stopRecordingHike();
                 pref.edit().putBoolean("recordingStarted", false).apply();
                 clearMap();
                 startRecord.setImageResource(R.drawable.ic_action_name);
@@ -365,7 +390,7 @@ MapActivity extends Activity {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
                     tourString = postSnapshot.getKey().toString();
 
-                    if (tourString.equals(routID)) {
+                    if (tourString.equals(pref.getString("routID", null))) {
 
                         if (postSnapshot.child("Name").getValue() == null)
                             routName = postSnapshot.child("name").getValue().toString();
@@ -383,7 +408,6 @@ MapActivity extends Activity {
                     }
                 }
                 drawPath();
-
             }
 
             @Override
@@ -530,7 +554,7 @@ MapActivity extends Activity {
                 loc2.setLongitude(currentLocation.getLongitude());
 
                 if (loc1.distanceTo(loc2) <= 15) {
-                    addFinishedTour(valueOf(routID));
+                    //addFinishedTour(pref.getString("routID", null));
                 }
             }
         }
@@ -558,6 +582,12 @@ MapActivity extends Activity {
 
     public void drawRecordedPath() {
 
+
+        if (pref.getBoolean("recordingStarted", false) || pref.getBoolean("navigationStarted", false))
+        {
+
+
+
         SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
 
         List<GeoPoint> movedDistance = new ArrayList<>();
@@ -581,12 +611,12 @@ MapActivity extends Activity {
         CoverdTrack = l;
         map.getOverlays().add(CoverdTrack);
         map.invalidate();
-
-
+        }
+        /*
         if (pref.getBoolean("navigationStarted", false)) {
             MovedDistance.clear();
         }
-
+        */
     }
 
     private String GetDistanceString(Double distance) {
@@ -662,9 +692,8 @@ MapActivity extends Activity {
 
     private void clearMap() {
 
-        for (int i = 0; i < map.getOverlays().size() - 1; i++) {
-            map.getOverlays().remove(i);
-        }
+            map.getOverlays().clear();
+
     }
 
     private void SetMap() {
@@ -767,8 +796,7 @@ MapActivity extends Activity {
     @Override
     protected void onDestroy() {
         stopService(new Intent(MapActivity.this, LocationService.class));
-        pref.edit().putBoolean("navigationStarted", false).apply();
-        pref.edit().putBoolean("recordingStarted", false).apply();
+
 
         stopRecordingHike();
         super.onDestroy();
