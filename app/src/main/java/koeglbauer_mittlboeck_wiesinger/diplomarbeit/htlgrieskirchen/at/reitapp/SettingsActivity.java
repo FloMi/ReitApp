@@ -160,6 +160,10 @@ public class SettingsActivity extends AppCompatActivity {
                                 .setIcon(android.R.drawable.ic_dialog_alert)
                                 .show();
                     }
+                    else
+                    {
+                        Toast.makeText(SettingsActivity.this, "Passwort erfolgreich geändert", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
             mPasswordConfirmationView.setText("");
