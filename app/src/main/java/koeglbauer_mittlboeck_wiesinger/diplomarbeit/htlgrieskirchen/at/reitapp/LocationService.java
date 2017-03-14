@@ -199,12 +199,14 @@ public class LocationService extends Service {
                 intent.putExtra("currentloclat", currentLocation.getLatitude());
                 intent.putExtra("currentloclong", currentLocation.getLongitude());
                 intent.putExtra("currentlocProvider", s);
+                intent.putExtra("currentlocBearing", loc.getBearing());
+
 
                 //mapActivity.displayMyCurrentLocationOverlay(currentLocation);
                 // mapActivity.calcWayToGoal(currentLocation);
                 // mapActivity.drawRecordedPath(currentLocation,s);
                 // mapActivity.gotOffCourse(currentLocation);
-                if (s.equals("gps")) {
+                //if (s.equals("gps")) {
                     if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false)) {
 
                         SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
@@ -219,7 +221,7 @@ public class LocationService extends Service {
 
                     }
                     sendBroadcast(intent);
-                }
+               // }
             }
         }
 

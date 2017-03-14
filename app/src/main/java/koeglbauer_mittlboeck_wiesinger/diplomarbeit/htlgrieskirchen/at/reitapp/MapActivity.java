@@ -3,6 +3,7 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -11,6 +12,11 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -20,6 +26,7 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -42,6 +49,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
+import org.osmdroid.tileprovider.modules.IFilesystemCache;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
@@ -91,11 +99,32 @@ MapActivity extends Activity {
     private String routName = "nan";
     private SharedPreferences pref;
 
+    private SensorManager sensorManager;
+    private long lastUpdate;
+    Boolean bool = false, bool1 = false;
+
+    private static SensorManager sensorService;
+    private Sensor sensor;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+        sensorService = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorService.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+
+        if (sensor != null) {
+            sensorService.registerListener(mySensorEventListener, sensor,
+                    SensorManager.SENSOR_DELAY_NORMAL);
+            Log.i("Compass MainActivity", "Registerered for ORIENTATION Sensor");
+        } else {
+            Log.e("Compass MainActivity", "Registerered for ORIENTATION Sensor");
+            Toast.makeText(this, "ORIENTATION Sensor not found",
+                    Toast.LENGTH_LONG).show();
+            finish();
+        }
 
         pref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -111,7 +140,7 @@ MapActivity extends Activity {
         SetMap();
         checkIfAdminLoggedIn();
 
-        //OrientationProvider o = new OrientationProvider(this);
+        //SensorProvider o = new SensorProvider(this);
         //  o.getOrientation();
 
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);
@@ -276,7 +305,7 @@ MapActivity extends Activity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         currentLocationMarker = new Marker(map);
-        currentLocationMarker.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_brightness_1_black_24dp));
+        currentLocationMarker.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_navigation_arrow_black));
 
 
     }
@@ -336,10 +365,11 @@ MapActivity extends Activity {
                             movedDistance.add(c);
                         }
 
-                        Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
-
-                        mDatabase.child("Paths").push().setValue(p);
-
+                            if(CoverdTrack.getNumberOfPoints()>0)
+                            {
+                                Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
+                                mDatabase.child("Paths").push().setValue(p);
+                            }
                     }
 
                     @Override
@@ -456,6 +486,8 @@ MapActivity extends Activity {
 
     }
 
+
+
     public void displayMyCurrentLocationOverlay(double lat, double longi) {
 
         GeoPoint Location = new GeoPoint(lat, longi);
@@ -464,6 +496,11 @@ MapActivity extends Activity {
         map.getOverlays().remove(currentLocationMarker);
 
         currentLocationMarker.setPosition(currentLocation);
+
+
+
+
+        
         currentLocationMarker.setTitle("You");
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
@@ -672,6 +709,24 @@ MapActivity extends Activity {
         startActivity(intent);
     }
 
+    private SensorEventListener mySensorEventListener = new SensorEventListener() {
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            // angle between the magnetic north direction
+            // 0=North, 90=East, 180=South, 270=West
+            float azimuth = event.values[0];
+
+            currentLocationMarker.setRotation(azimuth);
+
+            map.invalidate();
+        }
+    };
+
     private void drawPath() {
 
         mainPolyline.setColor(Color.argb(255, 138, 152, 31));
@@ -848,8 +903,6 @@ MapActivity extends Activity {
                 distanceleft.setText("Sie verlassen die Route! " + distance);
             }
         }
-
-
     }
 
     public void addStatistic(final String stats) {
@@ -922,10 +975,6 @@ MapActivity extends Activity {
         });
     }
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
     public com.google.firebase.appindexing.Action getIndexApiAction0() {
         return Actions.newView("Map", "http://[ENTER-YOUR-URL-HERE]");
     }
