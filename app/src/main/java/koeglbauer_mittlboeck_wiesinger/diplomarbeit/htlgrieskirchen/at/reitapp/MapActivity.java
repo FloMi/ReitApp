@@ -871,7 +871,7 @@ MapActivity extends Activity {
         });
     }
 
-    public void addFinishedTour(final int id) {
+    public void addFinishedTour(final String id) {
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         mDatabase.child("Users")
                 .child(user.getUid())
