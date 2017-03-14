@@ -9,7 +9,7 @@ import java.util.List;
 
 public class User {
     int finishedTour;
-    int range;
+    double range;
     int gast;
     int kult;
     String email;
@@ -22,7 +22,7 @@ public class User {
 
     }
 
-    public User(String status, int finishedTour, int range, int gast, int kult, String email, List<Integer> whichTourFinished, Boolean newsletter) {
+    public User(String status, int finishedTour, double range, int gast, int kult, String email, List<Integer> whichTourFinished, Boolean newsletter) {
         this.status = status;
         this.finishedTour = finishedTour;
         this.range = range;
@@ -37,7 +37,7 @@ public class User {
         return finishedTour;
     }
 
-    public int getRange() {
+    public double getRange() {
         return range;
     }
 
