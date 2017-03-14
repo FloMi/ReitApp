@@ -434,7 +434,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         List<Integer> list = new ArrayList<>();
         Date d = new Date();
         SimpleDateFormat f = new SimpleDateFormat("dd.MM.yyyy");
-        User user = new User(f.format(d.getTime()), 0,0,0,0, mAuth.getCurrentUser().getEmail(), list, newsletterChecked);
+        User user = new User(f.format(d.getTime()), 0,0.0001,0,0, mAuth.getCurrentUser().getEmail(), list, newsletterChecked);
         mDatabase.child("Users").child(mAuth.getCurrentUser().getUid()).setValue(user);
     }
 
