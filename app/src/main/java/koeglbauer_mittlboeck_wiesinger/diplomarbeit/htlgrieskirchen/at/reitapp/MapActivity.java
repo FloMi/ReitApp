@@ -15,7 +15,6 @@ import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.net.Uri;
@@ -49,7 +48,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
-import org.osmdroid.tileprovider.modules.IFilesystemCache;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
@@ -154,14 +152,8 @@ MapActivity extends Activity {
 
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
+            map.invalidate();
         }
-
-        /*
-        if (DatabaseCoordinates.size() > 0) {
-            pref.edit().putBoolean("navigationStarted", false).apply();
-            clearMap();
-        }
-        */
 
         startRecord.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -174,7 +166,6 @@ MapActivity extends Activity {
                     db.execSQL(TablePoints.SQL_CREATE);
                     pref.edit().putBoolean("recordingStarted", true).apply();
                     startRecord.setImageResource(R.drawable.ic_save);
-
                 }
             }
         });
@@ -205,14 +196,12 @@ MapActivity extends Activity {
         if (pref.getBoolean("navigationStarted", false)) {
             InitTourList();
 
-            SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
-            db.execSQL(TablePoints.SQL_CREATE);
-
+            //SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+            //db.execSQL(TablePoints.SQL_CREATE);
             startNav.setImageResource(R.drawable.ic_stopnav);
             timer = new Timer(getActivity());
             timer.resetClick();
             timer.startClick();
-            findViewById(R.id.timer).setVisibility(View.VISIBLE);
             currenttour.setVisibility(View.VISIBLE);
             distanceofrout.setVisibility(View.VISIBLE);
         }
@@ -248,16 +237,17 @@ MapActivity extends Activity {
                     timer = new Timer(getActivity());
                     timer.resetClick();
                     timer.startClick();
-                    findViewById(R.id.timer).setVisibility(View.VISIBLE);
-                    currenttour.setVisibility(View.VISIBLE);
-                    distanceofrout.setVisibility(View.VISIBLE);
+
+                    distanceleft.setVisibility(View.VISIBLE);
+
+                    distanceleft.setText("Berechnung läuft");
+
                     pref.edit().putBoolean("navigationStarted", true).apply();
                 }
             }
         });
 
-        if(intent.getStringExtra(TourActivity.EXTRA_MESSAGE) != null)
-        {
+        if (intent.getStringExtra(TourActivity.EXTRA_MESSAGE) != null) {
             pref.edit().putString("routID", intent.getStringExtra(TourActivity.EXTRA_MESSAGE)).apply();
         }
 
@@ -312,12 +302,11 @@ MapActivity extends Activity {
 
     private void stopRecordingHike() {
 
-        if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false))
-        {
+        if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false)) {
             SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
             db.execSQL(TablePoints.SQL_DROP);
         }
-     }
+    }
 
     private void checkIfAdminLoggedIn() {
 
@@ -349,7 +338,6 @@ MapActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-
                 mDatabase.child("Paths").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -357,19 +345,25 @@ MapActivity extends Activity {
                         SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
 
                         List<Coordinate> movedDistance = new ArrayList<>();
+                        List<GeoPoint> movedDistanceGeoPoints = new ArrayList<>();
 
                         Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
                         while (cursor.moveToNext()) {
                             Coordinate c = new Coordinate(cursor.getFloat(1), cursor.getFloat(0));
+                            GeoPoint g = new GeoPoint(cursor.getFloat(1), cursor.getFloat(0));
+                            movedDistanceGeoPoints.add(g);
                             movedDistance.add(c);
                         }
 
-                            if(CoverdTrack.getNumberOfPoints()>0)
-                            {
-                                Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(CoverdTrack.getPoints()));
-                                mDatabase.child("Paths").push().setValue(p);
-                            }
+                        clearMap();
+                        stopRecordingHike();
+                        pref.edit().putBoolean("recordingStarted", false).apply();
+
+                        if (CoverdTrack.getNumberOfPoints() > 0) {
+                            Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(movedDistanceGeoPoints));
+                            mDatabase.child("Paths").push().setValue(p);
+                        }
                     }
 
                     @Override
@@ -378,8 +372,6 @@ MapActivity extends Activity {
                     }
                 });
 
-                pref.edit().putBoolean("recordingStarted", false).apply();
-                clearMap();
                 startRecord.setImageResource(R.drawable.ic_action_name);
 
             }
@@ -400,8 +392,10 @@ MapActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
                 stopRecordingHike();
-                pref.edit().putBoolean("recordingStarted", false).apply();
                 clearMap();
+
+                pref.edit().putBoolean("recordingStarted", false).apply();
+
                 startRecord.setImageResource(R.drawable.ic_action_name);
             }
         });
@@ -487,7 +481,6 @@ MapActivity extends Activity {
     }
 
 
-
     public void displayMyCurrentLocationOverlay(double lat, double longi) {
 
         GeoPoint Location = new GeoPoint(lat, longi);
@@ -496,11 +489,6 @@ MapActivity extends Activity {
         map.getOverlays().remove(currentLocationMarker);
 
         currentLocationMarker.setPosition(currentLocation);
-
-
-
-
-        
         currentLocationMarker.setTitle("You");
         currentLocationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
@@ -521,7 +509,7 @@ MapActivity extends Activity {
                 atStartOfRout = false;
             }
 
-            crateInstructions();
+            createInstructions();
 
             distanceMovedSinceStart += calcDistanceOfRout(MovedDistance) - distanceMovedSinceStart;
 
@@ -534,7 +522,7 @@ MapActivity extends Activity {
 
     }
 
-    public void calcWayToGoal() {
+    public void calcDistanceToGoal() {
 
 
         //if (!navigationStarted) return;
@@ -591,7 +579,7 @@ MapActivity extends Activity {
                 loc2.setLongitude(currentLocation.getLongitude());
 
                 if (loc1.distanceTo(loc2) <= 15) {
-                    //addFinishedTour(pref.getString("routID", null));
+                    addFinishedTour(pref.getString("routID", null));
                 }
             }
         }
@@ -620,34 +608,32 @@ MapActivity extends Activity {
     public void drawRecordedPath() {
 
 
-        if (pref.getBoolean("recordingStarted", false) || pref.getBoolean("navigationStarted", false))
-        {
+        if (pref.getBoolean("recordingStarted", false) || pref.getBoolean("navigationStarted", false)) {
 
 
+            SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
 
-        SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
+            List<GeoPoint> movedDistance = new ArrayList<>();
 
-        List<GeoPoint> movedDistance = new ArrayList<>();
+            Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
-        Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+            while (cursor.moveToNext()) {
+                movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
+            }
 
-        while (cursor.moveToNext()) {
-            movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
-        }
+            cursor.close();
+            db.close();
 
-        cursor.close();
-        db.close();
+            Polyline l = new Polyline();
+            l.setColor(Color.argb(255, 138, 152, 31));
+            l.setWidth(20);
 
-        Polyline l = new Polyline();
-        l.setColor(Color.argb(255, 138, 152, 31));
-        l.setWidth(20);
+            l.setPoints(movedDistance);
 
-        l.setPoints(movedDistance);
-
-        map.getOverlays().remove(l);
-        CoverdTrack = l;
-        map.getOverlays().add(CoverdTrack);
-        map.invalidate();
+            map.getOverlays().remove(l);
+            CoverdTrack = l;
+            map.getOverlays().add(CoverdTrack);
+            map.invalidate();
         }
         /*
         if (pref.getBoolean("navigationStarted", false)) {
@@ -723,6 +709,7 @@ MapActivity extends Activity {
 
             currentLocationMarker.setRotation(azimuth);
 
+
             map.invalidate();
         }
     };
@@ -740,14 +727,14 @@ MapActivity extends Activity {
         clearMap();
 
         map.getOverlays().add(mainPolyline);
-        //crateInstructions();
+        //createInstructions();
         map.invalidate();
 
     }
 
     private void clearMap() {
 
-            map.getOverlays().clear();
+        map.getOverlays().clear();
 
     }
 
@@ -764,18 +751,18 @@ MapActivity extends Activity {
         mMapController.setCenter(s);
     }
 
-    private void crateInstructions() {
+    private void createInstructions() {
         if (DatabaseCoordinates.size() > 0 && pref.getBoolean("navigationStarted", true) && currentLocation != null) {
-            //if(currentLocation.distanceTo(DatabaseCoordinates.get(0))>0 && currentLocation.distanceTo(DatabaseCoordinates.get(0))<300)
-            //{
-            distanceleft.setVisibility(View.VISIBLE);
 
-            if (atStartOfRout) {
-                distanceleft.setText("Zum Ziel: " + GetDistanceString((DistanceToGoal)));
+            findViewById(R.id.timer).setVisibility(View.VISIBLE);
+            currenttour.setVisibility(View.VISIBLE);
+            distanceofrout.setVisibility(View.VISIBLE);
+
+            if (atStartOfRout && DistanceToGoal > 0) {
+                distanceleft.setText("Zum Ziel: " + GetDistanceString(DistanceToGoal));
             } else {
                 float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
-                distanceleft.setText("Zum Start: " + GetDistanceString(((double) distance)));
-                //}
+                distanceleft.setText("Zum Start: " + GetDistanceString((double) distance));
             }
         }
     }
@@ -800,6 +787,27 @@ MapActivity extends Activity {
             requestPermissions(params, REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS);
         }
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    map.invalidate();
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
     /**
