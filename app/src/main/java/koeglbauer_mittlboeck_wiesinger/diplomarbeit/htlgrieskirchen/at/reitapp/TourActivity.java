@@ -118,10 +118,10 @@ public class TourActivity extends AppCompatActivity {
                     else
                         itemdesc.add(postSnapshot.child("Range").getValue().toString()+ " m");
                     if(itemname.size()%2==0)
-                        backgroundid.add(R.color.colorPrimary);
+                        backgroundid.add(R.color.colorTourListFirst);
                     else
                     {
-                        backgroundid.add(R.color.colorPrimaryDark);
+                        backgroundid.add(R.color.colorTourListSecond);
                     }
                 }
                 String[] arr1 = new String[itemname.size()];

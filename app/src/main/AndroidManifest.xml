@@ -36,7 +36,8 @@
             android:name=".MainMenuActivity"
             android:label="@string/activity_user_label"
             android:parentActivityName=".MapActivity"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:logo="@mipmap/icon"/>
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"

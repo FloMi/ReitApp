@@ -20,23 +20,6 @@
 
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="1">
-
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="match_parent"
-                android:layout_height="196dp"
-                android:layout_gravity="center"
-                android:adjustViewBounds="true"
-                android:cropToPadding="false"
-                android:scaleType="fitCenter"
-                app:srcCompat="@mipmap/icon" />
-        </LinearLayout>
-
-        <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -102,20 +85,20 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:text="@string/action_tutorial"
                 android:id="@+id/buttonTuto"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse"
-                android:background="@color/colorPrimary"
                 android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimary"
                 android:drawableTop="@mipmap/ic_tutorial"
                 android:onClick="onClickTuto"
+                android:paddingBottom="10dp"
                 android:paddingTop="10dp"
-                android:paddingBottom="10dp"/>
+                android:text="@string/action_tutorial"
+                android:textAppearance="@style/TextAppearance.AppCompat.Widget.Button.Inverse" />
 
             <Button
                 android:text="@string/action_help"
