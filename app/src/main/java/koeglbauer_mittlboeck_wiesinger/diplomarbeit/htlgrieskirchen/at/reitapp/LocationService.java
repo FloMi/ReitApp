@@ -37,7 +37,6 @@ public class LocationService extends Service {
         super.onCreate();
         intent = new Intent(BROADCAST_ACTION);
 
-
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -75,8 +74,8 @@ public class LocationService extends Service {
             // for ActivityCompat#requestPermissions for more details.
             return START_STICKY;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 4000, 0, (LocationListener) listener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 0, listener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 5, (LocationListener) listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 5, listener);
 
         return START_STICKY;
     }
@@ -91,7 +90,7 @@ public class LocationService extends Service {
         previousBestLocation = currentBestLocation;
 
         if (currentBestLocation == null) {
-            // A new location is always better than no location
+            // new location is always better than no location
             return true;
         }
 
@@ -185,11 +184,6 @@ public class LocationService extends Service {
                 loc.getLatitude();
                 loc.getLongitude();
                 String s = loc.getProvider();
-                //intent.putExtra("Latitude", loc.getLatitude());
-                //intent.putExtra("Longitude", loc.getLongitude());
-                //intent.putExtra("Provider", loc.getProvider());
-                //Log.i("**************************************", loc.getLatitude()+"," + loc.getLongitude()+"");
-
 
                 Intent intent = new Intent();
                 intent.setAction("koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp.LOCATION_CHANGED");

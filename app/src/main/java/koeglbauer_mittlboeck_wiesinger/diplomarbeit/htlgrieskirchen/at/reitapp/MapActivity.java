@@ -29,6 +29,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -85,9 +86,6 @@ MapActivity extends Activity {
     private MapController mMapController;
     private GoogleApiClient client;
 
-    private boolean navigationStarted = false;
-    private boolean recordingStarted = false;
-
     private boolean centerMap = true;
     private boolean atStartOfRout = true;
     private DatabaseReference mDatabase;
@@ -97,12 +95,13 @@ MapActivity extends Activity {
     private String routName = "nan";
     private SharedPreferences pref;
 
-    private SensorManager sensorManager;
-    private long lastUpdate;
-    Boolean bool = false, bool1 = false;
+    private Chronometer chronometer;
 
     private static SensorManager sensorService;
     private Sensor sensor;
+
+    public MapActivity() {
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -123,8 +122,6 @@ MapActivity extends Activity {
                     Toast.LENGTH_LONG).show();
             finish();
         }
-
-        pref = PreferenceManager.getDefaultSharedPreferences(this);
 
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
@@ -149,6 +146,8 @@ MapActivity extends Activity {
         FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
         final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
 
+        timer = new Timer(getActivity());
+        pref = PreferenceManager.getDefaultSharedPreferences(this);
 
         if (Build.VERSION.SDK_INT >= 23) {
             checkPermissions();
@@ -199,9 +198,10 @@ MapActivity extends Activity {
             //SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
             //db.execSQL(TablePoints.SQL_CREATE);
             startNav.setImageResource(R.drawable.ic_stopnav);
-            timer = new Timer(getActivity());
             timer.resetClick();
             timer.startClick();
+
+
             currenttour.setVisibility(View.VISIBLE);
             distanceofrout.setVisibility(View.VISIBLE);
         }
@@ -218,9 +218,9 @@ MapActivity extends Activity {
 
                     stopRecordingHike();
 
-                    timer = new Timer(getActivity());
-                    timer.resetClick();
                     timer.stopClick();
+                    timer.resetClick();
+
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
@@ -234,8 +234,7 @@ MapActivity extends Activity {
                     db.execSQL(TablePoints.SQL_CREATE);
 
                     startNav.setImageResource(R.drawable.ic_stopnav);
-                    timer = new Timer(getActivity());
-                    timer.resetClick();
+
                     timer.startClick();
 
                     distanceleft.setVisibility(View.VISIBLE);
