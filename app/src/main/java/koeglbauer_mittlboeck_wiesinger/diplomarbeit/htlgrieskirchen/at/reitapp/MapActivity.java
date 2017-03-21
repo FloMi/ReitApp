@@ -350,8 +350,8 @@ MapActivity extends Activity {
                         Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
                         while (cursor.moveToNext()) {
-                            Coordinate c = new Coordinate(cursor.getFloat(1), cursor.getFloat(0));
-                            GeoPoint g = new GeoPoint(cursor.getFloat(1), cursor.getFloat(0));
+                            Coordinate c = new Coordinate(cursor.getFloat(0),cursor.getFloat(1));
+                            GeoPoint g = new GeoPoint(cursor.getFloat(0),cursor.getFloat(1));
                             movedDistanceGeoPoints.add(g);
                             movedDistance.add(c);
                         }
@@ -426,7 +426,7 @@ MapActivity extends Activity {
                             Double l = Double.parseDouble(ps.child("latitude").getValue().toString());
                             Double w = Double.parseDouble(ps.child("longitude").getValue().toString());
 
-                            GeoPoint g = new GeoPoint(w, l);
+                            GeoPoint g = new GeoPoint(l, w);
                             DatabaseCoordinates.add(g);
                         }
                     }
@@ -449,7 +449,7 @@ MapActivity extends Activity {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
 
 
-                    PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("geoLength").getValue().toString()), Double.parseDouble(postSnapshot.child("geoWidth").getValue().toString()), postSnapshot.child("Name").getValue().toString());
+                    PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("latitude").getValue().toString()), Double.parseDouble(postSnapshot.child("longitude").getValue().toString()), postSnapshot.child("name").getValue().toString());
                     pointOfInterests.add(p);
 
                 }
@@ -518,23 +518,14 @@ MapActivity extends Activity {
                 distanceMovedSinceStart = 0;
             }
         }
-
-
     }
 
     public void calcDistanceToGoal() {
 
-
-        //if (!navigationStarted) return;
-
         DistanceToGoal = 0.0;
-
         if (DatabaseCoordinates.size() > 0) {
-
-            List<GeoPoint> PointsToFinish = getRoutLeft(DatabaseCoordinates);
-
+            List<GeoPoint> PointsToFinish = getRemainingRout(DatabaseCoordinates);
             for (int i = 0; i < PointsToFinish.size() - 1; i++) {
-
                 Location actualLocation = new Location("actualLocation");
 
                 actualLocation.setLatitude(PointsToFinish.get(i).getLatitude());
@@ -548,7 +539,6 @@ MapActivity extends Activity {
                 DistanceToGoal = DistanceToGoal + (double) actualLocation.distanceTo(nextLoaction);
             }
         }
-
     }
 
     public float calcDistanceFromTo(GeoPoint locFrom, GeoPoint locTo) {
@@ -651,7 +641,7 @@ MapActivity extends Activity {
         return df.format(distance / 1000) + "Km";
     }
 
-    private List<GeoPoint> getRoutLeft(List<GeoPoint> p) {
+    private List<GeoPoint> getRemainingRout(List<GeoPoint> p) {
 
 
         List<GeoPoint> points = new ArrayList<>(p);
