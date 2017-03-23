@@ -26,7 +26,7 @@ public class Timer {
     private Handler mHandler = new Handler();
     private long startTime;
     private long elapsedTime;
-    private final int REFRESH_RATE = 100;
+    private final int REFRESH_RATE = 1000*60;
     private String hours,minutes,seconds,milliseconds;
     private long secs,mins,hrs,msecs;
     private boolean stopped = false;

@@ -137,6 +137,17 @@
             android:visibility="invisible" />
 
         <TextView
+            android:id="@+id/routnamebeforstart"
+            style="@style/QText"
+            android:layout_width="2000px"
+            android:layout_height="20pt"
+            android:layout_marginBottom="15pt"
+            android:layout_marginLeft="45pt"
+            android:layout_alignParentBottom="true"
+            android:text=""
+            android:visibility="invisible" />
+
+        <TextView
             android:id="@+id/timer"
             style="@style/QTextSmall"
             android:layout_width="60pt"
@@ -145,6 +156,17 @@
             android:layout_marginLeft="45pt"
             android:layout_alignParentBottom="true"
             android:text="" />
+
+        <TextView
+            android:id="@+id/estimatedTime"
+            style="@style/QTextSmall"
+            android:layout_width="60pt"
+            android:layout_height="20pt"
+            android:layout_marginBottom="0.5pt"
+            android:layout_marginLeft="45pt"
+            android:layout_alignParentBottom="true"
+            android:text=""
+            android:visibility="invisible"/>
 
         <TextView
             android:id="@+id/currenttour"

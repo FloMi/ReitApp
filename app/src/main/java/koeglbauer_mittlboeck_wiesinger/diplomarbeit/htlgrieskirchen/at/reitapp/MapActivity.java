@@ -56,6 +56,7 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
+import java.text.CollationElementIterator;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -81,6 +82,9 @@ MapActivity extends Activity {
     FloatingActionButton startRecord;
     double distanceMovedSinceStart = 0;
     private TextView currenttour;
+    TextView routnamebeforstart;
+    TextView estimatedTime;
+
     private Double DistanceToGoal = 0.0;
     private MapView map;
     private MapController mMapController;
@@ -145,7 +149,8 @@ MapActivity extends Activity {
         final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
         FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
         final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
-
+        routnamebeforstart = (TextView)findViewById(R.id.routnamebeforstart);
+        estimatedTime = (TextView)findViewById(R.id.estimatedTime);
         timer = new Timer(getActivity());
         pref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -193,7 +198,7 @@ MapActivity extends Activity {
         });
 
         if (pref.getBoolean("navigationStarted", false)) {
-            InitTourList();
+            drawPath();
 
             //SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
             //db.execSQL(TablePoints.SQL_CREATE);
@@ -224,11 +229,13 @@ MapActivity extends Activity {
                     currenttour.setVisibility(View.INVISIBLE);
                     distanceofrout.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
+                    routnamebeforstart.setVisibility(View.VISIBLE);
+                    estimatedTime.setVisibility(View.VISIBLE);
                     pref.edit().putBoolean("navigationStarted", false).apply();
 
                 } else {
 
-                    InitTourList();
+                    drawPath();
 
                     SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
                     db.execSQL(TablePoints.SQL_CREATE);
@@ -238,7 +245,11 @@ MapActivity extends Activity {
                     timer.startClick();
 
                     distanceleft.setVisibility(View.VISIBLE);
-
+                    routnamebeforstart.setVisibility(View.INVISIBLE);
+                    estimatedTime.setVisibility(View.INVISIBLE);
+                    findViewById(R.id.timer).setVisibility(View.VISIBLE);
+                    currenttour.setVisibility(View.VISIBLE);
+                    distanceofrout.setVisibility(View.VISIBLE);
                     distanceleft.setText("Berechnung läuft");
 
                     pref.edit().putBoolean("navigationStarted", true).apply();
@@ -265,6 +276,9 @@ MapActivity extends Activity {
             findViewById(R.id.startrout).startAnimation(slide_up);
 
             startNav.setVisibility(View.VISIBLE);
+            routnamebeforstart.setVisibility(View.VISIBLE);
+            estimatedTime.setVisibility(View.VISIBLE);
+            InitTourList();
 
 
         } else {
@@ -275,6 +289,9 @@ MapActivity extends Activity {
             findViewById(R.id.startrout).startAnimation(slide_down);
             startNav.setVisibility(View.INVISIBLE);
             currenttour.setVisibility(View.INVISIBLE);
+            routnamebeforstart.setVisibility(View.INVISIBLE);
+            estimatedTime.setVisibility(View.VISIBLE);
+
         }
 
         OpenStreetMapTileProviderConstants.setUserAgentValue(BuildConfig.APPLICATION_ID);
@@ -324,7 +341,7 @@ MapActivity extends Activity {
     private void exportToDatabase() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Title");
+        builder.setTitle("Name der Tour?");
 
         // Set up the input
         final EditText input = new EditText(this);
@@ -416,10 +433,15 @@ MapActivity extends Activity {
                     if (tourString.equals(pref.getString("routID", null))) {
 
                         if (postSnapshot.child("Name").getValue() == null)
+                        {
                             routName = postSnapshot.child("name").getValue().toString();
+                            routnamebeforstart.setText(routName);
+                        }
                         else
+                        {
                             routName = postSnapshot.child("Name").getValue().toString();
-
+                            routnamebeforstart.setText(routName);
+                        }
 
                         for (DataSnapshot ps : postSnapshot.child("coordinates").getChildren()) {
                             Double l = Double.parseDouble(ps.child("latitude").getValue().toString());
@@ -428,9 +450,13 @@ MapActivity extends Activity {
                             GeoPoint g = new GeoPoint(l, w);
                             DatabaseCoordinates.add(g);
                         }
+                            routnamebeforstart.append(" ("+GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates))+")");
+                            estimatedTime.setText(convertSecondsToHMmSs((long) ((((calcDistanceOfRout(DatabaseCoordinates)/1000)/4)*60))*60) +"");
+
+                        break;
                     }
                 }
-                drawPath();
+                //drawPath();
             }
 
             @Override
@@ -438,6 +464,21 @@ MapActivity extends Activity {
                 Toast.makeText(MapActivity.this, R.string.toast_show_tours_failed, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public static String convertSecondsToHMmSs(long seconds) {
+        long s = seconds % 60;
+        long m = (seconds / 60) % 60;
+        long h = (seconds / (60 * 60)) % 24;
+
+        if (m>60)
+        {
+            return h + " h " + m + " min";
+        }
+        else
+        {
+            return m+ " min";
+        }
     }
 
     private void InitAttraction() {
