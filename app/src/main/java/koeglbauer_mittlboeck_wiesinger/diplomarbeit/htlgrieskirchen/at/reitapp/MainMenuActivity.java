@@ -50,11 +50,11 @@ public class MainMenuActivity extends AppCompatActivity {
         startActivity(intent);
     }
     public void onClickTuto(View view){
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://reitapp.hol.es/Reitapp_Tutorial.html"));
         startActivity(browserIntent);
     }
     public void onClickHelp(View view){
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://reitapp.hol.es/Reitapp_Hilfe.html"));
         startActivity(browserIntent);
     }
 }

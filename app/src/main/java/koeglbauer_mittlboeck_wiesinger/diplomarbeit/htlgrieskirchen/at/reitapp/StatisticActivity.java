@@ -79,7 +79,7 @@ public class StatisticActivity extends AppCompatActivity {
 
     public void onClickStatisticLink(View view)
     {
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://reitapp.hol.es/Reitapp_Statistiken.html"));
         startActivity(browserIntent);
     }
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
