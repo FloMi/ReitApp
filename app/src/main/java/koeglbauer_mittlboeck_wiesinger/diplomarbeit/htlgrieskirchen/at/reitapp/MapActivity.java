@@ -139,9 +139,6 @@ MapActivity extends Activity {
         SetMap();
         checkIfAdminLoggedIn();
 
-        //SensorProvider o = new SensorProvider(this);
-        //  o.getOrientation();
-
         distanceofrout = (TextView) findViewById(R.id.distanceofrout);
         distanceleft = (TextView) findViewById(R.id.distanceleft);
         currenttour = (TextView) findViewById(R.id.currenttour);
@@ -200,8 +197,6 @@ MapActivity extends Activity {
         if (pref.getBoolean("navigationStarted", false)) {
             drawPath();
 
-            //SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
-            //db.execSQL(TablePoints.SQL_CREATE);
             startNav.setImageResource(R.drawable.ic_stopnav);
             timer.resetClick();
             timer.startClick();
@@ -269,7 +264,6 @@ MapActivity extends Activity {
 
         if (pref.getString("routID", null) != null) {
 
-            //slide up navigationLayout
             findViewById(R.id.layout).setVisibility(View.VISIBLE);
             findViewById(R.id.layout).startAnimation(slide_up);
             findViewById(R.id.startrout).setVisibility(View.VISIBLE);
@@ -349,7 +343,7 @@ MapActivity extends Activity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        // Set up the buttons
+        // Set up buttons
         builder.setPositiveButton("Speichern", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {

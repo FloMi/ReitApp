@@ -21,8 +21,6 @@ import static koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.re
 
 public class Timer {
 
-    private TextView tempTextView; //Temporary TextView
-    private Button tempBtn; //Temporary Button
     private Handler mHandler = new Handler();
     private long startTime;
     private long elapsedTime;
@@ -77,11 +75,7 @@ public class Timer {
         mins = (long)((time/1000)/60);
         hrs = (long)(((time/1000)/60)/60);
 
-		/* Convert the seconds to String
-		 * and format to ensure it has
-		 * a leading zero when required
-		 */
-        secs = secs % 60;
+		secs = secs % 60;
         seconds=String.valueOf(secs);
         if(secs == 0){
             seconds = "00";
@@ -89,8 +83,6 @@ public class Timer {
         if(secs <10 && secs > 0){
             seconds = "0"+seconds;
         }
-
-		/* Convert the minutes to String and format the String */
 
         mins = mins % 60;
         minutes=String.valueOf(mins);
@@ -101,8 +93,6 @@ public class Timer {
             minutes = "0"+minutes;
         }
 
-    	/* Convert the hours to String and format the String */
-
         hours=String.valueOf(hrs);
         if(hrs == 0){
             hours = "00";
@@ -111,9 +101,6 @@ public class Timer {
             hours = "0"+hours;
         }
 
-    	/* Although we are not using milliseconds on the timer in this example
-    	 * I included the code in the event that you wanted to include it on your own
-    	 */
         milliseconds = String.valueOf((long)time);
         if(milliseconds.length()==2){
             milliseconds = "0"+milliseconds;
@@ -123,7 +110,6 @@ public class Timer {
         }
         milliseconds = milliseconds.substring(milliseconds.length()-3, milliseconds.length()-2);
 
-		/* Setting the timer text to the elapsed time */
         ((TextView)activity.findViewById(R.id.timer)).setText(hours + ":" + minutes);
     }
 }
