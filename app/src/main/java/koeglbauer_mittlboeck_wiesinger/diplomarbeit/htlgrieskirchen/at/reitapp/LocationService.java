@@ -1,6 +1,5 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -16,7 +15,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -30,7 +28,20 @@ public class LocationService extends Service {
     public Location previousBestLocation = null;
 
     Intent intent;
-    int counter = 0;
+
+    public static Thread performOnBackgroundThread(final Runnable runnable) {
+        final Thread t = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    runnable.run();
+                } finally {
+                }
+            }
+        };
+        t.start();
+        return t;
+    }
 
     @Override
     public void onCreate() {
@@ -55,13 +66,15 @@ public class LocationService extends Service {
 
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
             return START_STICKY;
         }
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
             return START_STICKY;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, (LocationListener) listener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2, 5, (LocationListener) listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2,5, listener);
 
         return START_STICKY;
     }
@@ -116,7 +129,6 @@ public class LocationService extends Service {
         return false;
     }
 
-
     /**
      * Checks whether two providers are the same
      */
@@ -127,29 +139,15 @@ public class LocationService extends Service {
         return provider1.equals(provider2);
     }
 
-
     @Override
     public void onDestroy() {
         // handler.removeCallbacks(sendUpdatesToUI);
         super.onDestroy();
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
             return;
         }
         locationManager.removeUpdates(listener);
-    }
-
-    public static Thread performOnBackgroundThread(final Runnable runnable) {
-        final Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } finally {
-                }
-            }
-        };
-        t.start();
-        return t;
     }
 
     public class MyLocationListener implements LocationListener {
@@ -174,11 +172,6 @@ public class LocationService extends Service {
                 intent.putExtra("currentlocProvider", s);
                 intent.putExtra("currentlocBearing", loc.getBearing());
 
-
-                //mapActivity.displayMyCurrentLocationOverlay(currentLocation);
-                // mapActivity.calcDistanceToGoal(currentLocation);
-                // mapActivity.drawRecordedPath(currentLocation,s);
-                // mapActivity.gotOffCourse(currentLocation);
                 if (s.equals("gps")) {
                     if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false)) {
 

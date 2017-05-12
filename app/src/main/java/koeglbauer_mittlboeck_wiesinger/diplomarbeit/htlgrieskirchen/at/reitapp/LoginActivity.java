@@ -420,6 +420,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
 
     }
+
     @Override
     public void onBackPressed() {
         // do nothing, because back should do nothing

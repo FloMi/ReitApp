@@ -13,7 +13,7 @@ import java.util.List;
  * Created by FlorianM on 28.02.2017.
  */
 
-    public class LocationReceiver extends BroadcastReceiver {
+public class LocationReceiver extends BroadcastReceiver {
     private Context context;
     private MapActivity activity;
     List<GeoPoint> MovedDistance = new ArrayList<>();
@@ -37,6 +37,7 @@ import java.util.List;
         activity.drawRecordedPath();
         activity.gotOffCourse(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
         activity.checkIfTourFinished();
+        activity.checkIfPointOfInterestFinished();
 
     }
 }

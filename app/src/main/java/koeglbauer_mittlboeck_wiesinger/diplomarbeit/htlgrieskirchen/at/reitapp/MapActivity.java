@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,14 +55,11 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
-import java.text.CollationElementIterator;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static java.lang.Integer.valueOf;
 
 public class
 MapActivity extends Activity {
@@ -98,8 +94,6 @@ MapActivity extends Activity {
     private Timer timer;
     private String routName = "nan";
     private SharedPreferences pref;
-
-    private Chronometer chronometer;
 
     private static SensorManager sensorService;
     private Sensor sensor;
@@ -146,8 +140,8 @@ MapActivity extends Activity {
         final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
         FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
         final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
-        routnamebeforstart = (TextView)findViewById(R.id.routnamebeforstart);
-        estimatedTime = (TextView)findViewById(R.id.estimatedTime);
+        routnamebeforstart = (TextView) findViewById(R.id.routnamebeforstart);
+        estimatedTime = (TextView) findViewById(R.id.estimatedTime);
         timer = new Timer(getActivity());
         pref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -197,6 +191,8 @@ MapActivity extends Activity {
         if (pref.getBoolean("navigationStarted", false)) {
             drawPath();
 
+            //SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+            //db.execSQL(TablePoints.SQL_CREATE);
             startNav.setImageResource(R.drawable.ic_stopnav);
             timer.resetClick();
             timer.startClick();
@@ -253,7 +249,36 @@ MapActivity extends Activity {
         });
 
         if (intent.getStringExtra(TourActivity.EXTRA_MESSAGE) != null) {
-            pref.edit().putString("routID", intent.getStringExtra(TourActivity.EXTRA_MESSAGE)).apply();
+
+            if (pref.getString("routID", null) == null) {
+                pref.edit().putString("routID", intent.getStringExtra(TourActivity.EXTRA_MESSAGE)).apply();
+            }
+
+            if (pref.getString("routID", null) != intent.getStringExtra(TourActivity.EXTRA_MESSAGE) && !pref.getBoolean("navigationStarted", false)) {
+                pref.edit().putString("routID", intent.getStringExtra(TourActivity.EXTRA_MESSAGE)).apply();
+            }
+
+            if (pref.getString("routID", null) != intent.getStringExtra(TourActivity.EXTRA_MESSAGE) && pref.getBoolean("navigationStarted", false)) {
+                startNav.setImageResource(R.drawable.ic_navigation_arrow);
+
+
+                distanceleft.setText("");
+
+                clearMap();
+
+                stopRecordingHike();
+
+                timer.stopClick();
+                timer.resetClick();
+
+                currenttour.setVisibility(View.INVISIBLE);
+                distanceofrout.setVisibility(View.INVISIBLE);
+                findViewById(R.id.timer).setVisibility(View.INVISIBLE);
+                routnamebeforstart.setVisibility(View.VISIBLE);
+                estimatedTime.setVisibility(View.VISIBLE);
+                pref.edit().putBoolean("navigationStarted", false).apply();
+
+            }
         }
 
         Animation slide_down = AnimationUtils.loadAnimation(getApplicationContext(),
@@ -264,6 +289,7 @@ MapActivity extends Activity {
 
         if (pref.getString("routID", null) != null) {
 
+
             findViewById(R.id.layout).setVisibility(View.VISIBLE);
             findViewById(R.id.layout).startAnimation(slide_up);
             findViewById(R.id.startrout).setVisibility(View.VISIBLE);
@@ -273,7 +299,6 @@ MapActivity extends Activity {
             routnamebeforstart.setVisibility(View.VISIBLE);
             estimatedTime.setVisibility(View.VISIBLE);
             InitTourList();
-
 
         } else {
 
@@ -343,7 +368,7 @@ MapActivity extends Activity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        // Set up buttons
+        // Set up the buttons
         builder.setPositiveButton("Speichern", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -360,8 +385,8 @@ MapActivity extends Activity {
                         Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
 
                         while (cursor.moveToNext()) {
-                            Coordinate c = new Coordinate(cursor.getFloat(0),cursor.getFloat(1));
-                            GeoPoint g = new GeoPoint(cursor.getFloat(0),cursor.getFloat(1));
+                            Coordinate c = new Coordinate(cursor.getFloat(0), cursor.getFloat(1));
+                            GeoPoint g = new GeoPoint(cursor.getFloat(0), cursor.getFloat(1));
                             movedDistanceGeoPoints.add(g);
                             movedDistance.add(c);
                         }
@@ -400,13 +425,24 @@ MapActivity extends Activity {
         builder.setNeutralButton("Löschen", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-                stopRecordingHike();
-                clearMap();
 
-                pref.edit().putBoolean("recordingStarted", false).apply();
+                new AlertDialog.Builder(MapActivity.this)
+                        .setTitle("Löschen")
+                        .setMessage("Wollen sie die aufgezeichnete Tour wirklich löschen?")
+                        .setIcon(R.drawable.ic_alert)
+                        .setPositiveButton("Ja", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
 
-                startRecord.setImageResource(R.drawable.ic_action_name);
+                                dialog.cancel();
+                                stopRecordingHike();
+                                clearMap();
+
+                                pref.edit().putBoolean("recordingStarted", false).apply();
+
+                                startRecord.setImageResource(R.drawable.ic_action_name);
+                            }
+                        })
+                        .setNegativeButton("Nein", null).show();
             }
         });
         builder.show();
@@ -426,13 +462,10 @@ MapActivity extends Activity {
 
                     if (tourString.equals(pref.getString("routID", null))) {
 
-                        if (postSnapshot.child("Name").getValue() == null)
-                        {
+                        if (postSnapshot.child("Name").getValue() == null) {
                             routName = postSnapshot.child("name").getValue().toString();
                             routnamebeforstart.setText(routName);
-                        }
-                        else
-                        {
+                        } else {
                             routName = postSnapshot.child("Name").getValue().toString();
                             routnamebeforstart.setText(routName);
                         }
@@ -444,8 +477,8 @@ MapActivity extends Activity {
                             GeoPoint g = new GeoPoint(l, w);
                             DatabaseCoordinates.add(g);
                         }
-                            routnamebeforstart.append(" ("+GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates))+")");
-                            estimatedTime.setText(convertSecondsToHMmSs((long) ((((calcDistanceOfRout(DatabaseCoordinates)/1000)/4)*60))*60) +"");
+                        routnamebeforstart.append(" (" + GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates)) + ")");
+                        estimatedTime.setText(convertSecondsToHM((long) ((((calcDistanceOfRout(DatabaseCoordinates) / 1000) / 4) * 60)) * 60) + "");
 
                         break;
                     }
@@ -460,18 +493,15 @@ MapActivity extends Activity {
         });
     }
 
-    public static String convertSecondsToHMmSs(long seconds) {
+    public static String convertSecondsToHM(long seconds) {
         long s = seconds % 60;
         long m = (seconds / 60) % 60;
         long h = (seconds / (60 * 60)) % 24;
 
-        if (m>60)
-        {
+        if (m > 60) {
             return h + " h " + m + " min";
-        }
-        else
-        {
-            return m+ " min";
+        } else {
+            return m + " min";
         }
     }
 
@@ -481,29 +511,28 @@ MapActivity extends Activity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                    PointOfInterest p = new PointOfInterest(
+                            postSnapshot.getKey(),
+                            Double.parseDouble(postSnapshot.child("latitude").getValue().toString()),
+                            Double.parseDouble(postSnapshot.child("longitude").getValue().toString()),
+                            postSnapshot.child("name").getValue().toString()
+                    );
 
-
-                    PointOfInterest p = new PointOfInterest(postSnapshot.getKey(), Double.parseDouble(postSnapshot.child("latitude").getValue().toString()), Double.parseDouble(postSnapshot.child("longitude").getValue().toString()), postSnapshot.child("name").getValue().toString());
                     pointOfInterests.add(p);
-
                 }
-
                 for (PointOfInterest i : pointOfInterests) {
                     Marker cc;
+
                     cc = new Marker(map);
-                    map.getOverlays().add(cc);
-
-                    cc.setIcon(getResources().getDrawable(R.drawable.pointofinterest));
-
-                    GeoPoint g = new GeoPoint(i.getLatitude(), i.getLongitude());
-
-                    cc.setPosition(g);
-
+                    cc.setIcon(ContextCompat.getDrawable(getActivity(), R.drawable.pointofinterest));
                     cc.setTitle(i.getName() + "");
                     cc.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                    map.getOverlays().add(currentLocationMarker);
-                }
 
+                    GeoPoint g = new GeoPoint(i.getLatitude(), i.getLongitude());
+                    cc.setPosition(g);
+
+                    map.getOverlays().add(cc);
+                }
             }
 
             @Override
@@ -594,16 +623,23 @@ MapActivity extends Activity {
     public void checkIfTourFinished() {
         if (pref.getBoolean("navigationStarted", false) && DatabaseCoordinates.size() > 0) {
             if (Math.abs(calcDistanceOfRout(MovedDistance) - calcDistanceOfRout(DatabaseCoordinates)) < 50) {
-                Location loc1 = new Location("");
-                loc1.setLatitude(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLatitude());
-                loc1.setLongitude(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLongitude());
+                GeoPoint goal = new GeoPoint(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLatitude(), DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLongitude());
 
-                Location loc2 = new Location("");
-                loc2.setLatitude(currentLocation.getLatitude());
-                loc2.setLongitude(currentLocation.getLongitude());
-
-                if (loc1.distanceTo(loc2) <= 15) {
+                if (calcDistanceFromTo(currentLocation, goal) <= 20) {
                     addFinishedTour(pref.getString("routID", null));
+                }
+            }
+        }
+    }
+
+    public void checkIfPointOfInterestFinished() {
+        if (pointOfInterests.size() > 0) {
+
+            for (PointOfInterest p : pointOfInterests) {
+                GeoPoint goal = new GeoPoint(p.getLatitude(), p.getLongitude());
+
+                if (calcDistanceFromTo(currentLocation, goal) <= 20) {
+                    addStatistic("kult");
                 }
             }
         }
@@ -659,11 +695,6 @@ MapActivity extends Activity {
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
         }
-        /*
-        if (pref.getBoolean("navigationStarted", false)) {
-            MovedDistance.clear();
-        }
-        */
     }
 
     private String GetDistanceString(Double distance) {
@@ -733,7 +764,6 @@ MapActivity extends Activity {
 
             currentLocationMarker.setRotation(azimuth);
 
-
             map.invalidate();
         }
     };
@@ -776,14 +806,20 @@ MapActivity extends Activity {
     }
 
     private void createInstructions() {
+        if (!pref.getBoolean("navigationStarted", true)) {
+            pref.edit().putBoolean("wasAtStart", false).apply();
+        }
+
         if (DatabaseCoordinates.size() > 0 && pref.getBoolean("navigationStarted", true) && currentLocation != null) {
 
             findViewById(R.id.timer).setVisibility(View.VISIBLE);
             currenttour.setVisibility(View.VISIBLE);
             distanceofrout.setVisibility(View.VISIBLE);
 
-            if (atStartOfRout && DistanceToGoal > 0) {
+
+            if (atStartOfRout && DistanceToGoal > 0 && pref.getBoolean("wasAtStart", false)) {
                 distanceleft.setText("Zum Ziel: " + GetDistanceString(DistanceToGoal));
+                pref.edit().putBoolean("wasAtStart", true).apply();
             } else {
                 float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
                 distanceleft.setText("Zum Start: " + GetDistanceString((double) distance));
@@ -823,14 +859,10 @@ MapActivity extends Activity {
                     map.invalidate();
                 } else {
 
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    // permission denied!
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
@@ -931,8 +963,21 @@ MapActivity extends Activity {
                 }
                 count++;
             }
-            if (distance > 50) {
-                distanceleft.setText("Sie verlassen die Route! " + distance);
+            if (distance > 200) {
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+                builder1.setMessage("Sie Verlassen Ihre Route!.");
+                builder1.setCancelable(true);
+
+                builder1.setPositiveButton(
+                        "Verstanden",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        });
+                AlertDialog alert11 = builder1.create();
+                alert11.show();
+
             }
         }
     }

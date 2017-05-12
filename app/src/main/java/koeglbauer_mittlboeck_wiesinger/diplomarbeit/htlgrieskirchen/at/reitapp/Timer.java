@@ -25,8 +25,8 @@ public class Timer {
     private long startTime;
     private long elapsedTime;
     private final int REFRESH_RATE = 1000*60;
-    private String hours,minutes,seconds,milliseconds;
-    private long secs,mins,hrs,msecs;
+    private String hours,minutes,seconds;
+    private long secs,mins,hrs;
     private boolean stopped = false;
 
     private Context context;
@@ -75,7 +75,8 @@ public class Timer {
         mins = (long)((time/1000)/60);
         hrs = (long)(((time/1000)/60)/60);
 
-		secs = secs % 60;
+		/* seconds to String  */
+        secs = secs % 60;
         seconds=String.valueOf(secs);
         if(secs == 0){
             seconds = "00";
@@ -83,6 +84,8 @@ public class Timer {
         if(secs <10 && secs > 0){
             seconds = "0"+seconds;
         }
+
+		/* mnutes to String*/
 
         mins = mins % 60;
         minutes=String.valueOf(mins);
@@ -93,6 +96,8 @@ public class Timer {
             minutes = "0"+minutes;
         }
 
+    	/* hours to String*/
+
         hours=String.valueOf(hrs);
         if(hrs == 0){
             hours = "00";
@@ -101,15 +106,7 @@ public class Timer {
             hours = "0"+hours;
         }
 
-        milliseconds = String.valueOf((long)time);
-        if(milliseconds.length()==2){
-            milliseconds = "0"+milliseconds;
-        }
-        if(milliseconds.length()<=1){
-            milliseconds = "00";
-        }
-        milliseconds = milliseconds.substring(milliseconds.length()-3, milliseconds.length()-2);
-
+		/* Setting the timer text to the elapsed time */
         ((TextView)activity.findViewById(R.id.timer)).setText(hours + ":" + minutes);
     }
 }
