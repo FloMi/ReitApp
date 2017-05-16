@@ -1,10 +1,15 @@
 package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -33,12 +38,15 @@ public class TourActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
     private View mProgressView;
+    private SharedPreferences pref;
+    Object listItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tour);
 
+        pref = PreferenceManager.getDefaultSharedPreferences(this);
         mProgressView = findViewById(R.id.tour_progress);
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -46,8 +54,37 @@ public class TourActivity extends AppCompatActivity {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Object listItem = list.getItemAtPosition(position) ;
-                startMap(listItem.toString());
+
+                listItem = list.getItemAtPosition(position) ;
+
+
+                if(pref.getBoolean("navigationStarted", false))
+                {
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(TourActivity.this);
+
+                    builder.setTitle("Neue Tour?");
+                    builder.setMessage("Ihre aktuelle Tour wird überschrieben");
+                    builder.setPositiveButton("Neue Tour", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    pref.edit().putBoolean("navigationStarted", false).apply();
+                                    pref.edit().putBoolean("wasAtStart", false).apply();
+                                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+                                    db.execSQL(TablePoints.SQL_DROP);
+                                    startMap(listItem.toString());
+                                                                  }
+                            });
+                    builder.setNegativeButton("Abbrechen", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            });
+                    builder.setIcon(R.drawable.ic_alert);
+                    builder.show();
+                }
+                else
+                {
+                    startMap(listItem.toString());
+                }
             }
         });
     }

@@ -221,6 +221,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         pref = PreferenceManager.getDefaultSharedPreferences(this);
         pref.edit().putBoolean("recordingStarted", false).apply();
         pref.edit().putBoolean("navigationStarted", false).apply();
+        pref.edit().putBoolean("wasAtStart", false).apply();
         pref.edit().putString("routID", null).apply();
 
         SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();

@@ -3,6 +3,7 @@ package koeglbauer_mittlboeck_wiesinger.diplomarbeit.htlgrieskirchen.at.reitapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -30,6 +31,7 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,11 +57,16 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class
 MapActivity extends Activity {
@@ -72,10 +79,12 @@ MapActivity extends Activity {
     TextView distanceleft;
     Marker currentLocationMarker;
     Polyline CoverdTrack;
-    List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
+    static List<GeoPoint> DatabaseCoordinates = new ArrayList<>();
 
     Polyline mainPolyline = new Polyline();
     FloatingActionButton startRecord;
+    FloatingActionButton startNav;
+
     double distanceMovedSinceStart = 0;
     private TextView currenttour;
     TextView routnamebeforstart;
@@ -94,7 +103,7 @@ MapActivity extends Activity {
     private Timer timer;
     private String routName = "nan";
     private SharedPreferences pref;
-
+    private ImageView walking;
     private static SensorManager sensorService;
     private Sensor sensor;
 
@@ -137,11 +146,12 @@ MapActivity extends Activity {
         distanceleft = (TextView) findViewById(R.id.distanceleft);
         currenttour = (TextView) findViewById(R.id.currenttour);
         startRecord = (FloatingActionButton) findViewById(R.id.startrecording);
-        final FloatingActionButton startNav = (FloatingActionButton) findViewById(R.id.startrout);
+        startNav = (FloatingActionButton) findViewById(R.id.startrout);
         FloatingActionButton myFab = (FloatingActionButton) findViewById(R.id.start);
         final FloatingActionButton centermap = (FloatingActionButton) findViewById(R.id.centermap);
         routnamebeforstart = (TextView) findViewById(R.id.routnamebeforstart);
         estimatedTime = (TextView) findViewById(R.id.estimatedTime);
+        walking = (ImageView) findViewById(R.id.walking);
         timer = new Timer(getActivity());
         pref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -222,8 +232,9 @@ MapActivity extends Activity {
                     findViewById(R.id.timer).setVisibility(View.INVISIBLE);
                     routnamebeforstart.setVisibility(View.VISIBLE);
                     estimatedTime.setVisibility(View.VISIBLE);
+                    walking.setVisibility(View.VISIBLE);
                     pref.edit().putBoolean("navigationStarted", false).apply();
-
+                    pref.edit().putBoolean("wasAtStart", false).apply();
                 } else {
 
                     drawPath();
@@ -240,6 +251,8 @@ MapActivity extends Activity {
                     estimatedTime.setVisibility(View.INVISIBLE);
                     findViewById(R.id.timer).setVisibility(View.VISIBLE);
                     currenttour.setVisibility(View.VISIBLE);
+                    walking.setVisibility(View.INVISIBLE);
+
                     distanceofrout.setVisibility(View.VISIBLE);
                     distanceleft.setText("Berechnung läuft");
 
@@ -277,6 +290,8 @@ MapActivity extends Activity {
                 routnamebeforstart.setVisibility(View.VISIBLE);
                 estimatedTime.setVisibility(View.VISIBLE);
                 pref.edit().putBoolean("navigationStarted", false).apply();
+                pref.edit().putBoolean("wasAtStart", false).apply();
+
 
             }
         }
@@ -347,7 +362,7 @@ MapActivity extends Activity {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        if (user.getEmail().equals("florian.mittlboeck25@gmail.com")) {
+        if (user.getEmail().equals("florian.mittlboeck@web.de")) {
             findViewById(R.id.startrecording).setVisibility(View.VISIBLE);
         }
     }
@@ -394,11 +409,13 @@ MapActivity extends Activity {
                         clearMap();
                         stopRecordingHike();
                         pref.edit().putBoolean("recordingStarted", false).apply();
-
-                        if (CoverdTrack.getNumberOfPoints() > 0) {
+                    if(CoverdTrack != null)
+                    {
+                        if (CoverdTrack.getNumberOfPoints() > 0 ) {
                             Path p = new Path(movedDistance, input.getText().toString(), (int) calcDistanceOfRout(movedDistanceGeoPoints));
                             mDatabase.child("Paths").push().setValue(p);
                         }
+                    }
                     }
 
                     @Override
@@ -584,11 +601,11 @@ MapActivity extends Activity {
     }
 
     public void calcDistanceToGoal() {
-
+        if (pref.getBoolean("navigationStarted", false)) {
         DistanceToGoal = 0.0;
         if (DatabaseCoordinates.size() > 0) {
             List<GeoPoint> PointsToFinish = getRemainingRout(DatabaseCoordinates);
-            for (int i = 0; i < PointsToFinish.size() - 1; i++) {
+            for (int i = 0; i < PointsToFinish.size() - 2; i++) {
                 Location actualLocation = new Location("actualLocation");
 
                 actualLocation.setLatitude(PointsToFinish.get(i).getLatitude());
@@ -602,8 +619,9 @@ MapActivity extends Activity {
                 DistanceToGoal = DistanceToGoal + (double) actualLocation.distanceTo(nextLoaction);
             }
         }
-    }
 
+        }
+    }
     public float calcDistanceFromTo(GeoPoint locFrom, GeoPoint locTo) {
 
 
@@ -622,11 +640,57 @@ MapActivity extends Activity {
 
     public void checkIfTourFinished() {
         if (pref.getBoolean("navigationStarted", false) && DatabaseCoordinates.size() > 0) {
-            if (Math.abs(calcDistanceOfRout(MovedDistance) - calcDistanceOfRout(DatabaseCoordinates)) < 50) {
-                GeoPoint goal = new GeoPoint(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLatitude(), DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLongitude());
 
-                if (calcDistanceFromTo(currentLocation, goal) <= 20) {
+            SQLiteDatabase db = new SQLiteHelper(this).getReadableDatabase();
+
+            List<GeoPoint> movedDistance = new ArrayList<>();
+
+            Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+
+            while (cursor.moveToNext()) {
+                movedDistance.add(new GeoPoint(cursor.getFloat(0), cursor.getFloat(1)));
+            }
+
+            float moved =calcDistanceOfRout(movedDistance);
+            float length =calcDistanceOfRout(DatabaseCoordinates)- 50;
+            if (moved >= length) {
+                GeoPoint goal = new GeoPoint(DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLatitude(), DatabaseCoordinates.get(DatabaseCoordinates.size() - 1).getLongitude());
+                if (calcDistanceFromTo(currentLocation, goal) <= 100) {
+
+                    pref.edit().putBoolean("navigationStarted", false).apply();
+
+
                     addFinishedTour(pref.getString("routID", null));
+                    new AlertDialog.Builder(MapActivity.this)
+                            .setTitle("Herzlichen Glückwunsch")
+                            .setMessage("Sie haben soeben die Route " + routName + " abgeschlossen")
+                            .setPositiveButton("Weiter Wandern!", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    startNav.setImageResource(R.drawable.ic_navigation_arrow);
+
+                                    distanceleft.setText("");
+
+                                    clearMap();
+
+                                    stopRecordingHike();
+
+                                    timer.stopClick();
+                                    timer.resetClick();
+
+                                    SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+                                    db.execSQL(TablePoints.SQL_DROP);
+
+                                    currenttour.setVisibility(View.INVISIBLE);
+                                    distanceofrout.setVisibility(View.INVISIBLE);
+                                    findViewById(R.id.timer).setVisibility(View.INVISIBLE);
+                                    routnamebeforstart.setVisibility(View.VISIBLE);
+                                    estimatedTime.setVisibility(View.VISIBLE);
+                                    walking.setVisibility(View.VISIBLE);
+                                    pref.edit().putBoolean("navigationStarted", false).apply();
+                                    pref.edit().putBoolean("wasAtStart", false).apply();
+                                    dialog.cancel();
+                                }
+                            }).show();
                 }
             }
         }
@@ -659,7 +723,7 @@ MapActivity extends Activity {
             loc2.setLatitude(rout.get(i + 1).getLatitude());
             loc2.setLongitude(rout.get(i + 1).getLongitude());
 
-            distanceInMeters = +loc1.distanceTo(loc2);
+            distanceInMeters += loc1.distanceTo(loc2);
         }
 
         return distanceInMeters;
@@ -734,8 +798,9 @@ MapActivity extends Activity {
             }
         }
         //lösche alle punkte vor aktueller position
-        for (int l = 0; l <= points.indexOf(nextpoint) - 1; l++) {
-            points.remove(l);
+        int idx = points.indexOf(nextpoint);
+        for (int l = 0; l < idx ; l++) {
+            points.remove(0);
         }
 
         //aktuelle position anfang von route
@@ -798,6 +863,7 @@ MapActivity extends Activity {
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setBuiltInZoomControls(true);
         map.setMultiTouchControls(true);
+        map.setMaxZoomLevel(19);
 
         mMapController = (MapController) map.getController();
         mMapController.setZoom(17);
@@ -817,12 +883,18 @@ MapActivity extends Activity {
             distanceofrout.setVisibility(View.VISIBLE);
 
 
-            if (atStartOfRout && DistanceToGoal > 0 && pref.getBoolean("wasAtStart", false)) {
+            if (atStartOfRout || pref.getBoolean("wasAtStart", false)) {
+                    if(!pref.getBoolean("wasAtStart", false))
+                    {
+                        pref.edit().putBoolean("wasAtStart", true).apply();
+                    }
                 distanceleft.setText("Zum Ziel: " + GetDistanceString(DistanceToGoal));
-                pref.edit().putBoolean("wasAtStart", true).apply();
             } else {
+                if(!pref.getBoolean("wasAtStart", false))
+                {
                 float distance = currentLocation.distanceTo(DatabaseCoordinates.get(0));
                 distanceleft.setText("Zum Start: " + GetDistanceString((double) distance));
+                }
             }
         }
     }

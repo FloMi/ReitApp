@@ -118,7 +118,7 @@
             android:id="@+id/distanceofrout"
             style="@style/QTextSmall"
             android:layout_width="2000px"
-            android:layout_height="20pt"
+            android:layout_height="16pt"
             android:layout_marginBottom="0.5pt"
             android:layout_marginLeft="67pt"
             android:layout_alignParentBottom="true"
@@ -129,7 +129,7 @@
             android:id="@+id/distanceleft"
             style="@style/QText"
             android:layout_width="2000px"
-            android:layout_height="20pt"
+            android:layout_height="19pt"
             android:layout_marginBottom="15pt"
             android:layout_marginLeft="45pt"
             android:layout_alignParentBottom="true"
@@ -141,7 +141,7 @@
             style="@style/QText"
             android:layout_width="2000px"
             android:layout_height="20pt"
-            android:layout_marginBottom="15pt"
+            android:layout_marginBottom="14pt"
             android:layout_marginLeft="45pt"
             android:layout_alignParentBottom="true"
             android:text=""
@@ -151,28 +151,35 @@
             android:id="@+id/timer"
             style="@style/QTextSmall"
             android:layout_width="60pt"
-            android:layout_height="20pt"
+            android:layout_height="16pt"
             android:layout_marginBottom="0.5pt"
             android:layout_marginLeft="45pt"
             android:layout_alignParentBottom="true"
             android:text="" />
 
+
         <TextView
             android:id="@+id/estimatedTime"
             style="@style/QTextSmall"
             android:layout_width="60pt"
-            android:layout_height="20pt"
-            android:layout_marginBottom="0.5pt"
-            android:layout_marginLeft="45pt"
+            android:layout_height="16.5pt"
+            android:layout_marginLeft="55pt"
             android:layout_alignParentBottom="true"
             android:text=""
             android:visibility="invisible"/>
-
+        <ImageView
+            android:id="@+id/walking"
+            style="@style/QTextSmall"
+            android:layout_width="20dp"
+            android:layout_height="26pt"
+            android:layout_marginLeft="45pt"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/ic_walking"/>
         <TextView
             android:id="@+id/currenttour"
             style="@style/QTextSmall"
             android:layout_width="2000px"
-            android:layout_height="20pt"
+            android:layout_height="16pt"
             android:layout_marginBottom="0.5pt"
             android:layout_marginLeft="80pt"
             android:layout_alignParentBottom="true"

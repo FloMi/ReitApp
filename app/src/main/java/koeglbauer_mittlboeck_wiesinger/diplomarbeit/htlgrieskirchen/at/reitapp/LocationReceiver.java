@@ -34,6 +34,7 @@ public class LocationReceiver extends BroadcastReceiver {
 
         activity.displayMyCurrentLocationOverlay(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
         activity.calcDistanceToGoal();
+
         activity.drawRecordedPath();
         activity.gotOffCourse(intent.getDoubleExtra("currentloclat",-1.0),intent.getDoubleExtra("currentloclong",-1.0));
         activity.checkIfTourFinished();
