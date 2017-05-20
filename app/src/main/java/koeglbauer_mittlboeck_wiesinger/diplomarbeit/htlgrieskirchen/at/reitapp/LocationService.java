@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.location.LocationListener;
@@ -154,6 +155,14 @@ public class LocationService extends Service {
         private MapActivity mapActivity;
         private SharedPreferences pref;
 
+        SQLiteDatabase db;
+        ContentValues contentValues;
+
+        public MyLocationListener()
+        {
+
+        }
+
         public void onLocationChanged(final Location loc) {
             pref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
@@ -175,17 +184,16 @@ public class LocationService extends Service {
                 if (s.equals("gps")) {
                     if (pref.getBoolean("navigationStarted", false) || pref.getBoolean("recordingStarted", false)) {
 
-                        SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
-                        ContentValues contentValues = new ContentValues();
+                        db = new SQLiteHelper(getApplicationContext()).getWritableDatabase();
+                        contentValues = new ContentValues();
 
                         contentValues.put(TablePoints.Latitude, currentLocation.getLatitude());
                         contentValues.put(TablePoints.Longitude, currentLocation.getLongitude());
 
                         db.insert(TablePoints.TABLE_NAME, null, contentValues);
-
                         db.close();
-
                     }
+
                     sendBroadcast(intent);
                 }
             }

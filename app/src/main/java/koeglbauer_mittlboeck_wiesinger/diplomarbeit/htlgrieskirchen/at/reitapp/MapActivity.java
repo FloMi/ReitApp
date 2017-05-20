@@ -164,6 +164,7 @@ MapActivity extends Activity {
             public void onClick(View v) {
 
                 if (pref.getBoolean("recordingStarted", false)) {
+                    pref.edit().putBoolean("recordingStarted", false).apply();
                     exportToDatabase();
 
                 } else {
@@ -362,7 +363,7 @@ MapActivity extends Activity {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        if (user.getEmail().equals("florian.mittlboeck@web.de")) {
+        if (user.getEmail().equals("florian.mittlboeck@web.de") || user.getEmail().equals("maximilian.eberl69@gmail.com")) {
             findViewById(R.id.startrecording).setVisibility(View.VISIBLE);
         }
     }
@@ -407,8 +408,7 @@ MapActivity extends Activity {
                         }
 
                         clearMap();
-                        stopRecordingHike();
-                        pref.edit().putBoolean("recordingStarted", false).apply();
+                        db.execSQL(TablePoints.SQL_DROP);
                     if(CoverdTrack != null)
                     {
                         if (CoverdTrack.getNumberOfPoints() > 0 ) {
@@ -432,10 +432,10 @@ MapActivity extends Activity {
         builder.setNegativeButton("Weiter", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
                 pref.edit().putBoolean("recordingStarted", true).apply();
-
                 startRecord.setImageResource(R.drawable.ic_save);
+                dialog.cancel();
+
             }
         });
 
@@ -457,6 +457,9 @@ MapActivity extends Activity {
                                 pref.edit().putBoolean("recordingStarted", false).apply();
 
                                 startRecord.setImageResource(R.drawable.ic_action_name);
+
+                                SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+                                db.execSQL(TablePoints.SQL_DROP);
                             }
                         })
                         .setNegativeButton("Nein", null).show();
@@ -495,7 +498,7 @@ MapActivity extends Activity {
                             DatabaseCoordinates.add(g);
                         }
                         routnamebeforstart.append(" (" + GetDistanceString((double) calcDistanceOfRout(DatabaseCoordinates)) + ")");
-                        estimatedTime.setText(convertSecondsToHM((long) ((((calcDistanceOfRout(DatabaseCoordinates) / 1000) / 4) * 60)) * 60) + "");
+                        estimatedTime.setText(convertSecondsToHM((long) ((calcDistanceOfRout(DatabaseCoordinates)/1000)*15)*60) + "");
 
                         break;
                     }
@@ -515,7 +518,7 @@ MapActivity extends Activity {
         long m = (seconds / 60) % 60;
         long h = (seconds / (60 * 60)) % 24;
 
-        if (m > 60) {
+        if (h > 0) {
             return h + " h " + m + " min";
         } else {
             return m + " min";
@@ -754,8 +757,14 @@ MapActivity extends Activity {
 
             l.setPoints(movedDistance);
 
-            map.getOverlays().remove(l);
-            CoverdTrack = l;
+            if(CoverdTrack != null)
+            {
+                map.getOverlays().remove(CoverdTrack);
+            }
+
+                CoverdTrack = l;
+
+
             map.getOverlays().add(CoverdTrack);
             map.invalidate();
         }
@@ -772,13 +781,31 @@ MapActivity extends Activity {
 
     private List<GeoPoint> getRemainingRout(List<GeoPoint> p) {
 
-
         List<GeoPoint> points = new ArrayList<>(p);
+
+        SQLiteDatabase db = new SQLiteHelper(getApplicationContext()).getReadableDatabase();
+
+        List<Coordinate> movedDistance = new ArrayList<>();
+        List<GeoPoint> movedDistanceGeoPoints = new ArrayList<>();
+
+        Cursor cursor = db.query(TablePoints.TABLE_NAME, new String[]{TablePoints.Latitude, TablePoints.Longitude}, null, null, null, null, null);
+
+        while (cursor.moveToNext()) {
+            Coordinate c = new Coordinate(cursor.getFloat(0), cursor.getFloat(1));
+            GeoPoint g = new GeoPoint(cursor.getFloat(0), cursor.getFloat(1));
+            movedDistanceGeoPoints.add(g);
+            movedDistance.add(c);
+        }
+
+        float moved = calcDistanceOfRout(movedDistanceGeoPoints);
+
+        GeoPoint point = calcDistanceUntil(moved,points);
 
         GeoPoint nextpoint = points.get(0);
         float smalestDistance = 10000000;
+
         //nähester punkt in der route zur aktuellen position
-        for (GeoPoint i : points) {
+        /*for (GeoPoint i : points) {
 
             Location locationList = new Location("point List");
 
@@ -796,9 +823,10 @@ MapActivity extends Activity {
                 smalestDistance = distance;
                 nextpoint = i;
             }
-        }
+        }*/
         //lösche alle punkte vor aktueller position
-        int idx = points.indexOf(nextpoint);
+
+        int idx = points.indexOf(point);
         for (int l = 0; l < idx ; l++) {
             points.remove(0);
         }
@@ -809,6 +837,37 @@ MapActivity extends Activity {
         }
         return points;
     }
+
+    private GeoPoint calcDistanceUntil(float moved, List<GeoPoint> points) {
+
+        float distanceInMeters = 0;
+        List<GeoPoint> p = new ArrayList<>(points);
+
+        for (int i = 0; i < p.size() - 1; i++) {
+
+            Location loc1 = new Location("");
+            loc1.setLatitude(p.get(i).getLatitude());
+            loc1.setLongitude(p.get(i).getLongitude());
+
+            Location loc2 = new Location("");
+            loc2.setLatitude(p.get(i + 1).getLatitude());
+            loc2.setLongitude(p.get(i + 1).getLongitude());
+
+            if(distanceInMeters < moved)
+            {
+                distanceInMeters += loc1.distanceTo(loc2);
+            }
+            else
+            {
+                return p.get(i);
+
+                // int idx = (p.size()-1) - p.indexOf(i);
+                // for (int l = 0; idx > l; l++) {
+                //    p.remove(p.size()-1);
+                }
+            }
+            return null;
+        }
 
     private void openUserActivity() {
         Intent intent = new Intent(this, MainMenuActivity.class);
